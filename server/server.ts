@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -8,7 +10,7 @@ import { Message } from '../src/interfaces';
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-const port = 8000;
+const port = process.env.PORT;
 
 // app.use('/', express.static(path.resolve(__dirname, './public')));
 app.use('/', express.static('public'));
