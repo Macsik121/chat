@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon server/server.ts"
+    "start": "nodemon server/server.ts",
+    "heroku-postbuild": "npx webpack --mode production"
   },
   "keywords": [],
   "author": "",
