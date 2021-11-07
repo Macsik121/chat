@@ -18,7 +18,7 @@ import SidebarChats from './Sidebar';
 import { User, Chat, Message } from '../interfaces';
 import UserChat from './Chat';
 
-const uiEndpoint = 'http://localhost:8000';
+const uiEndpoint = 'https://macsik121s-first-chat.herokuapp.com';
 
 interface ChatState {
     requestMaking: boolean
