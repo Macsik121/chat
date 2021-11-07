@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 const { env } = process;
 const port = env.PORT;
-const mode = env.mode;
+const mode = env.mode || 'production';
 globals.__API_ENDPOINT__ = (
     mode == 'development'
         ? env.apiDevEndpoint || 'http://localhost:3000/graphql'
