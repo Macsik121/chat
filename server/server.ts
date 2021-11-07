@@ -5,7 +5,6 @@ import http from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import globals from '../src/globals';
-// import '@babel/polyfill';
 // import render from './render';
 import { Message } from '../src/interfaces';
 const app = express();
@@ -13,12 +12,6 @@ const server = http.createServer(app);
 const io = new Server(server);
 const { env } = process;
 const port = env.PORT;
-const mode = env.mode || 'production';
-globals.__API_ENDPOINT__ = (
-    mode == 'development'
-        ? env.apiDevEndpoint || 'http://localhost:3000/graphql'
-        : env.apiProdEndpoint || 'https://macsik121s-first-chat-api.herokuapp.com/graphql'
-);
 
 // app.use('/', express.static(path.resolve(__dirname, './public')));
 app.use('/', express.static('public'));
