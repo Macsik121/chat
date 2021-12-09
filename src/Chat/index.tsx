@@ -26,11 +26,12 @@ interface ChatState {
     isMounted: boolean
     socket: any
     open: boolean
-    userChats: Array<User>
+    userChats: Array<Chat>
     searchFocused: boolean
     selectedChat: number
     searchValue: string
     searchUsers: Array<User>
+    socketConfigured: boolean
 }
 
 type Reducer = (state: ChatState, action: any) => any;
@@ -54,7 +55,8 @@ const initState: ChatState = {
     userChats: [],
     searchFocused: false,
     selectedChat: 0,
-    searchValue: ''
+    searchValue: '',
+    socketConfigured: false
 };
 
 const Chat: FC<any> = (props) => {
@@ -113,14 +115,16 @@ const Chat: FC<any> = (props) => {
         }
     }
     useEffect(() => {
-        if (JSON.stringify(state.userChats) !== JSON.stringify([])) {
+        if (JSON.stringify(state.userChats) !== JSON.stringify([]) && !state.socketConfigured) {
             configureSocket();
+            dispatch({ type: 'socketConfigured', payload: true });
         }
     }, [state.userChats]);
     function configureSocket() {
         const socket = socketClient(uiEndpoint);
-        socket.on('text message', async ({ message: { chatID, message } }) => {
-            if (message.owner == user.id || chatID == user.id) {
+        socket.on('text message', ({ message: { chatID, message } }) => {
+            console.log(state.userChats);
+            if (state.userChats.some((chat: Chat) => chat.id == chatID)) {
                 const msg: Message = {
                     text: message.text,
                     owner: message.owner
@@ -165,17 +169,37 @@ const Chat: FC<any> = (props) => {
             text: message.sendMessage.value,
             owner: user.id
         }
+        // let chatExists = false;
+        // for(let i = 0; i < state.userChats.length; i++) {
+        //     const currentChat = state.userChats[i];
+        //     if (currentChat.id == state.selectedChat) {
+        //         chatExists = true;
+        //     }
+        // }
+        // if (!chatExists) {
+        //     fetchData(`
+        //         mutation createRoom($competitors: [Int!]) {
+        //             createRoom(competitors: $competitors) {
+        //                 message
+        //                 success
+        //             }
+        //         }
+        //     `, {
+        //         competitors: [ user.id,  ]
+        //     })
+        // }
         state.socket.emit('text message', { message: msg, chatID: state.selectedChat });
         message.sendMessage.value = '';
         const query = `
-            mutation saveMessage($message: MessageInput!) {
-                saveMessage(message: $message)
+            mutation saveMessage($message: MessageInput!, $chat: Int!) {
+                saveMessage(message: $message, chat: $chat)
             }
         `;
         const vars = {
-            message: msg
+            message: msg,
+            chat: state.selectedChat
         };
-        // await fetchData(query, vars);
+        await fetchData(query, vars);
     }
 
     async function searchUsers() {
@@ -195,7 +219,6 @@ const Chat: FC<any> = (props) => {
         const newSearchUsers = [];
         for(let i = 0; i < searchUsers.length; i++) {
             const currentUser: User = searchUsers[i];
-            console.log(currentUser.id, user.id)
             if (!(currentUser.name == user.name)) {
                 newSearchUsers.push(currentUser);
             }
@@ -209,20 +232,22 @@ const Chat: FC<any> = (props) => {
         if (chat.id == state.selectedChat) {
             const { messages } = chat;
             if (messages) {
-                renderedMessages = messages.map((message: Message, i) => (
-                    <div
-                        className={`${
-                            user.id == message.owner
-                                ? 'my-msg '
-                                : ''
-                            }msg`}
-                        key={message.text + message.owner + i}
-                    >
-                        <span className="wrap">
-                            {message.text}
-                        </span>
-                    </div>
-                ));
+                renderedMessages = messages.map((message: Message, i) => {
+                    return (
+                        <div
+                            className={`${
+                                user.id == message.owner
+                                    ? 'my-msg '
+                                    : ''
+                                }msg`}
+                            key={message.text + message.owner + i}
+                        >
+                            <span className="wrap">
+                                {message.text}
+                            </span>
+                        </div>
+                    )
+                });
                 return renderedMessages;
             }
         }
@@ -243,14 +268,16 @@ const Chat: FC<any> = (props) => {
                     className="chat"
                     onClick={() => {
                         dispatch({ type: 'selectedChat', payload: currentUser.id });
-                        const arrayExists = state.userChats.some((chat: Chat) => currentUser.id == chat.id);
-                        if (!arrayExists) {
-                            state.userChats.push({
-                                id: currentUser.id,
-                                messages: []
-                            });
-                        }
-                        dispatch({ type: 'searchUsers', payload: [] });
+                        // const arrayExists = state.userChats.some((chat: Chat) => currentUser.id == chat.id);
+                        // if (!arrayExists) {
+                        //     state.userChats.push({
+                        //         id: currentUser.id,
+                        //         messages: []
+                        //     });
+                        // }
+                        // dispatch({ type: 'searchUsers', payload: [] });
+                        const chatBody = document.getElementById('chat-body') as HTMLDivElement;
+                        if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
                     }}
                     key={currentUser.id + currentUser.email + i}
                 >

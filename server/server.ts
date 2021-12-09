@@ -18,7 +18,7 @@ app.use('/', express.static('public'));
 // app.get('*', render);
 
 io.on('connection', (socket) => {
-    socket.on('text message', async (message: Message, chatID: number) => {
+    socket.on('text message', (message: Message, chatID: number) => {
         io.emit('text message', {
             message,
             chatID
