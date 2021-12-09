@@ -123,8 +123,11 @@ const Chat: FC<any> = (props) => {
     function configureSocket() {
         const socket = socketClient(uiEndpoint);
         socket.on('text message', ({ message: { chatID, message } }) => {
+            console.log("text message from socket io client");
             console.log(state.userChats);
+            console.log(state.userChats.some((chat: Chat) => chat.id == chatID))
             if (state.userChats.some((chat: Chat) => chat.id == chatID)) {
+                console.log('completed message')
                 const msg: Message = {
                     text: message.text,
                     owner: message.owner
