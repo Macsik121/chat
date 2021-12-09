@@ -17,8 +17,9 @@ import fetchData from '../fetchData';
 import SidebarChats from './Sidebar';
 import { User, Chat, Message } from '../interfaces';
 import UserChat from './Chat';
+import globals from '../globals';
 
-const uiEndpoint = 'https://macsik121s-first-chat.herokuapp.com';
+const uiEndpoint = globals.__UI_SERVER_ENDPOINT__;
 
 interface ChatState {
     requestMaking: boolean
@@ -85,9 +86,22 @@ const Chat: FC<any> = (props) => {
             };
             const { generateNewJwt } = await fetchData(query, vars);
             user = jwtDecode(generateNewJwt);
+            const { chats } = await fetchData(`
+                query chats($id: Int!) {
+                    chats(id: $id) {
+                        id
+                        messages {
+                            text
+                            owner
+                        }
+                    }
+                }
+            `, {
+                id: user.id
+            })
             localStorage.setItem('token', generateNewJwt);
             dispatch({ type: 'isMounted', payload: true });
-            dispatch({ type: 'userChats', payload: user.chats });
+            dispatch({ type: 'userChats', payload: chats });
         })()
     }, []);
     if (isSnitch) {
@@ -171,12 +185,6 @@ const Chat: FC<any> = (props) => {
                     name
                     email
                     id
-                    chats {
-                        messages {
-                            owner
-                            text
-                        }
-                    }
                 }
             }
         `;

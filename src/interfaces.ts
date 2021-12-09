@@ -5,13 +5,15 @@ export interface User {
     password?: string;
     chats?: Array<Chat>
 }
+
 export type VoidFunction = () => void
+
 export interface Chat {
     id: number;
-    title: string;
-    avatar?: string;
+    competitors: Array<Number>;
     messages: Array<Message>
 };
+
 export interface Message {
     text: string
     owner: number

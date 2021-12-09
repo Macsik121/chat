@@ -1,8 +1,7 @@
 import fetch from 'isomorphic-fetch';
 import globals from './globals';
 
-const __API_ENDPOINT__ = 'https://macsik121s-first-chat-api.herokuapp.com/graphql';
-// globals.__API_ENDPOINT__;
+const { __API_ENDPOINT__ } = globals;
 
 const fetchData: (
     query: string,

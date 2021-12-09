@@ -11,7 +11,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const { env } = process;
-const port = env.PORT;
+const port = env.PORT || 8000;
 
 // app.use('/', express.static(path.resolve(__dirname, './public')));
 app.use('/', express.static('public'));
