@@ -5,6 +5,6 @@ export default {
     ),
     __UI_SERVER_ENDPOINT__: (
         'https://macsik121s-first-chat.herokuapp.com'
-        // 'http://localhost:8000'
+        // 'https://localhost:8000'
     )
 }
