@@ -1,22 +1,19 @@
 import React, {
     FC,
     useEffect,
-    useReducer
+    useReducer,
+    useState
 } from 'react';
 import { withRouter } from 'react-router-dom';
 import socketClient from 'socket.io-client';
 import { TextField, CircularProgress } from '@material-ui/core';
 import jwtDecode from 'jwt-decode';
-import {
-    Menu,
-    ArrowBack,
-    Search,
-    Send
-} from '@material-ui/icons';
 import fetchData from '../fetchData';
 import SidebarChats from './Sidebar';
-import { User, Chat, Message } from '../interfaces';
+import Search from './Search';
+import ChatInfo from './ChatInfo';
 import UserChat from './Chat';
+import { User, Chat, Message, Competitor } from '../interfaces';
 import globals from '../globals';
 
 const uiEndpoint = globals.__UI_SERVER_ENDPOINT__;
@@ -25,11 +22,8 @@ interface ChatState {
     requestMaking: boolean
     isMounted: boolean
     socket: any
-    open: boolean
     userChats: Array<Chat>
-    searchFocused: boolean
     selectedChat: number
-    searchValue: string
     searchUsers: Array<User>
     socketConfigured: boolean
 }
@@ -40,29 +34,28 @@ const reducer: Reducer = function(state: any, action) {
     if (state[action.type] == undefined) {
         throw Error('You have called dispatch. You wrote a wrong action.type. Check if dispatch has state variable you passed, or you just made a typo');
     }
-    return {
+    const newState = {
         ...state,
         [action.type]: action.payload
-    }
+    };
+    return newState;
 }
 
-const initState: ChatState = {
+const initState = {
     searchUsers: [],
     requestMaking: false,
     isMounted: false,
     socket: {},
-    open: false,
     userChats: [],
-    searchFocused: false,
     selectedChat: 0,
-    searchValue: '',
-    socketConfigured: false
+    socketConfigured: false,
+    choosenUser: {}
 };
 
 const Chat: FC<any> = (props) => {
     const [state, dispatch] = useReducer(reducer, initState);
     let user: User = {
-        name: '',
+        name: '',                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
         email: '',
         id: 0,
         chats: []
@@ -75,23 +68,27 @@ const Chat: FC<any> = (props) => {
                 isSnitch = true;
                 return;
             }
-            // loadMessages();
             configureSocket();
-            const query = `
-                query generateNewJwt($name: String!) {
-                    generateNewJwt(name: $name)
-                }
-            `;
-            const oldUser: User = jwtDecode(localStorage.getItem('token') || '');
-            const vars = {
-                name: oldUser.name
-            };
-            const { generateNewJwt } = await fetchData(query, vars);
-            user = jwtDecode(generateNewJwt);
+            // const query = `
+            //     query generateNewJwt($name: String!) {
+            //         generateNewJwt(name: $name)
+            //     }
+            // `;
+            // const oldUser: User = jwtDecode(localStorage.getItem('token') || '');
+            // const vars = {
+            //     name: oldUser.name
+            // };
+            // const { generateNewJwt } = await fetchData(query, vars);
+            user = jwtDecode(localStorage.getItem('token') || '');
             const { chats } = await fetchData(`
                 query chats($id: Int!) {
                     chats(id: $id) {
                         id
+                        title
+                        competitors {
+                            id
+                            name
+                        }
                         messages {
                             text
                             owner
@@ -101,14 +98,11 @@ const Chat: FC<any> = (props) => {
             `, {
                 id: user.id
             })
-            localStorage.setItem('token', generateNewJwt);
+            // localStorage.setItem('token', generateNewJwt);
             dispatch({ type: 'isMounted', payload: true });
             dispatch({ type: 'userChats', payload: chats });
         })()
     }, []);
-    if (isSnitch) {
-        return <div></div>;
-    }
     if (user.id == 0) {
         if (localStorage.getItem('token')) {
             user = jwtDecode(localStorage.getItem('token') || '');
@@ -123,138 +117,154 @@ const Chat: FC<any> = (props) => {
     function configureSocket() {
         const socket = socketClient(uiEndpoint);
         socket.on('text message', ({ message: { chatID, message } }) => {
-            console.log("text message from socket io client");
-            console.log(state.userChats);
-            console.log(state.userChats.some((chat: Chat) => chat.id == chatID))
-            if (state.userChats.some((chat: Chat) => chat.id == chatID)) {
-                console.log('completed message')
+            const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
+            if (certainChat) {
                 const msg: Message = {
                     text: message.text,
                     owner: message.owner
                 };
                 const userChats = [...state.userChats];
-                for(let i = 0; i < userChats.length; i++) {
-                    const currentChat: Chat = userChats[i];
-                    if (currentChat.id == chatID) {
-                        currentChat.messages.push(msg);
-                    }
-                }
+                certainChat.messages.push(msg);
                 dispatch({ type: 'userChats', payload: userChats });
-                const chatBody: any = document.getElementById('chat-body');
-                if (chatBody) {
-                    chatBody.scrollTop = chatBody.scrollHeight;
-                }
+                const chatBody = document.getElementById('chat-body') as HTMLDivElement;
+                chatBody.scrollTop = chatBody.scrollHeight;
             }
         });
         dispatch({ type: 'socket', payload: socket });
     }
-    // async function loadMessages() {
-    //     dispatch({ type: 'requestMaking', payload: true });
-    //     const query = `
-    //         query {
-    //             messages {
-    //                 text
-    //                 owner
-    //             }
-    //         }
-    //     `;
-
-    //     const res = await fetchData(query);
-    //     dispatch({ type: 'chatMessages', payload: res.messages });
-    //     dispatch({ type: 'requestMaking', payload: false });
-    //     const chatBody: any = document.getElementById('chat-body');
-    //     chatBody.scrollTop = chatBody.scrollHeight;
-    // }
     async function sendMessage(e: React.FormEvent) {
         e.preventDefault();
         const message = e.target as typeof e.target & { sendMessage: { value: string } };
+        if (message.sendMessage.value == '') {
+            return;
+        }
         const msg = {
             text: message.sendMessage.value,
             owner: user.id
         }
-        // let chatExists = false;
-        // for(let i = 0; i < state.userChats.length; i++) {
-        //     const currentChat = state.userChats[i];
-        //     if (currentChat.id == state.selectedChat) {
-        //         chatExists = true;
-        //     }
-        // }
-        // if (!chatExists) {
-        //     fetchData(`
-        //         mutation createRoom($competitors: [Int!]) {
-        //             createRoom(competitors: $competitors) {
-        //                 message
-        //                 success
-        //             }
-        //         }
-        //     `, {
-        //         competitors: [ user.id,  ]
-        //     })
-        // }
-        state.socket.emit('text message', { message: msg, chatID: state.selectedChat });
         message.sendMessage.value = '';
-        const query = `
-            mutation saveMessage($message: MessageInput!, $chat: Int!) {
-                saveMessage(message: $message, chat: $chat)
+        let id = state.selectedChat;
+        let msgSent = false;
+        if (state.searchUsers.length != 0) {
+            if (
+                JSON.stringify(state.choosenUser) != '{}' &&
+                !state.selectedChat
+            ) {
+                const competitors = [
+                    {
+                        id: state.choosenUser.id,
+                        name: state.choosenUser.name
+                    },
+                    {
+                        id: user.id,
+                        name: user.name
+                    }
+                ];
+                const { chatId } = await fetchData(`
+                    query {
+                        chatId
+                    }
+                `);
+                const newUserChats = state.userChats.slice();
+                const newChat: Chat = {
+                    id: chatId,
+                    messages: [ msg ],
+                    competitors
+                }
+                newUserChats.push(newChat);
+                id = chatId;
+                dispatch({ type: 'socketConfigured', payload: false });
+                dispatch({ type: 'userChats', payload: newUserChats });
+                dispatch({ type: 'selectedChat', payload: chatId });
+                state.socket.emit('text message', { message: msg, chatID: id });
+                await fetchData(`
+                    mutation createRoom(
+                        $competitors: [CompetitorsInput!]!,
+                        $message: MessageInput!,
+                        $id: Int!
+                    ) {
+                        createRoom(
+                            competitors: $competitors,
+                            message: $message,
+                            id: $id
+                        )
+                    }
+                `, {
+                    competitors,
+                    message: msg,
+                    id: chatId
+                });
+                msgSent = true;
             }
-        `;
-        const vars = {
-            message: msg,
-            chat: state.selectedChat
-        };
-        await fetchData(query, vars);
+        }
+        if (!msgSent) {
+            state.socket.emit('text message', { message: msg, chatID: id });
+            const query = `
+                mutation saveMessage($message: MessageInput!, $chat: Int!) {
+                    saveMessage(message: $message, chat: $chat)
+                }
+            `;
+            const vars = {
+                message: msg,
+                chat: id
+            };
+            await fetchData(query, vars);
+        }
     }
 
-    async function searchUsers() {
+    async function searchUsers(search: string) {
         const query = `
-            query searchUsers($search: String!) {
-                searchUsers(search: $search) {
+            query searchUsers($search: String!, $id: Int!) {
+                searchUsers(search: $search, id: $id) {
+                    id
                     name
                     email
-                    id
                 }
             }
         `;
         const vars = {
-            search: state.searchValue
+            search,
+            id: user.id
         }
         let { searchUsers } = await fetchData(query, vars);
-        const newSearchUsers = [];
-        for(let i = 0; i < searchUsers.length; i++) {
-            const currentUser: User = searchUsers[i];
-            if (!(currentUser.name == user.name)) {
-                newSearchUsers.push(currentUser);
+        searchUsers.map((user: any, i: number) => {
+            const certainUser: Chat = state.userChats.find((chatUser: Chat) => (
+                chatUser.competitors[0].name == user.name ||
+                chatUser.competitors[1].name == user.name
+            ));
+            if (certainUser) {
+                user.id = certainUser.id;
             }
-        }
-        searchUsers = newSearchUsers;
-        dispatch({ type: 'searchValue', payload: '' });
+        });
         dispatch({ type: 'searchUsers', payload: searchUsers });
     }
-    let messages: Array<JSX.Element> = state.userChats.map((chat: Chat) => {
-        let renderedMessages: Array<JSX.Element> = [];
-        if (chat.id == state.selectedChat) {
-            const { messages } = chat;
-            if (messages) {
-                renderedMessages = messages.map((message: Message, i) => {
-                    return (
-                        <div
-                            className={`${
-                                user.id == message.owner
-                                    ? 'my-msg '
-                                    : ''
-                                }msg`}
-                            key={message.text + message.owner + i}
-                        >
-                            <span className="wrap">
-                                {message.text}
-                            </span>
-                        </div>
-                    )
-                });
-                return renderedMessages;
-            }
+
+    function cancelSearching() {
+        dispatch({ type: 'searchUsers', payload: [] });
+    }
+
+    let messages: Array<JSX.Element> = [ <div></div> ];
+    if (state.selectedChat) {
+        const certainChat: Chat = state.userChats.find((chat: Chat) => chat.id == state.selectedChat);
+        if (certainChat && certainChat.messages) {
+            messages = certainChat.messages.map((message: Message, i: number) => {
+                return (
+                    <div
+                        className={`${
+                            user.id == message.owner
+                                ? 'my-msg '
+                                : ''
+                            }msg`}
+                        key={message.text + message.owner + i + certainChat.id}
+                    >
+                        <span className="wrap">
+                            {message.text}
+                        </span>
+                    </div>
+                )
+            });
         }
-    });
+    }
 
     let chats: Array<JSX.Element> = [
         <div
@@ -264,76 +274,66 @@ const Chat: FC<any> = (props) => {
             Start messaging!
         </div>
     ];
-    if (state.searchUsers.length != 0) {
-        chats = state.searchUsers.map((currentUser: User, i: number) => {
-            return (
-                <div
-                    className="chat"
-                    onClick={() => {
-                        dispatch({ type: 'selectedChat', payload: currentUser.id });
-                        // const arrayExists = state.userChats.some((chat: Chat) => currentUser.id == chat.id);
-                        // if (!arrayExists) {
-                        //     state.userChats.push({
-                        //         id: currentUser.id,
-                        //         messages: []
-                        //     });
-                        // }
-                        // dispatch({ type: 'searchUsers', payload: [] });
-                        const chatBody = document.getElementById('chat-body') as HTMLDivElement;
-                        if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
-                    }}
-                    key={currentUser.id + currentUser.email + i}
-                >
-                    <div className="chat-info">
-                        <div className="chat-title">{currentUser.id}</div>
+    if (
+        state.userChats.length != 0 ||
+        state.searchUsers.length != 0
+    ) {
+        if (state.searchUsers.length == 0 && state.userChats.length != 0) {
+            chats = state.userChats.map((chat: Chat, i: number) => {
+                return (
+                    // <UserChat
+                    //     keyProp={`${chat.id}_${i}_${chat.messages[0].text + chat.messages[0].owner}`}
+                    //     clickHandler={() => {
+                    //         dispatch({ type: 'selectedChat', payload: chat.id });
+                    //         // const chatBody = document.getElementById('chat-body') as HTMLDivElement;
+                    //         // chatBody.scroll(0, chatBody.scrollHeight);
+                    //     }}
+                    //     chat={chat}
+                    // />
+                    <div
+                        className="chat"
+                        key={`${chat.id}_${i}_${chat.messages[0] ? chat.messages[0].text + chat.messages[0].owner : chat.messages}`}
+                        onClick={() => {
+                            dispatch({ type: 'selectedChat', payload: chat.id });
+                        }}
+                    >
+                        <div className="chat-info">
+                            <div className="chat-title">
+                                {chat.competitors[0].name == user.name
+                                    ? chat.competitors[1].name
+                                    : chat.competitors[0].name
+                                }
+                            </div>
+                        </div>
                     </div>
-                </div>
-            )
-            // currentUser.chats?.map((chat: Chat) => {
-            //     if (chat.id == user.id) {
-            //         return (
-            //             <UserChat
-            //                 keyProp={user.name + user.email + i}
-            //                 clickHandler={() => {
-            //                     dispatch({ type: 'selectedChat', payload: chat.id });
-            //                     dispatch({ type: 'searchUsers', payload: [] })
-            //                 }}
-            //                 chat={chat}
-            //             />
-            //         )
-            //     }
-            // });
-        });
-    } else if (state.userChats.length != 0) {
-        chats = state.userChats.map((chat: Chat, i: number) => {
-            // if (chat.id == user.name) {
-            //     return;
-            // }
-            return (
-                // <UserChat
-                //     keyProp={chat.id + i}
-                //     clickHandler={() => {
-                //         dispatch({ type: 'selectedChat', payload: chat.id })
-                //     }}
-                //     chat={chat}
-                // />
-                <div
-                    key={chat.id}
-                    className="chat"
-                    onClick={() => {
-                        dispatch({ type: 'selectedChat', payload: chat.id });
-                        const chatBody = document.getElementById('chat-body') as HTMLDivElement;
-                        if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
-                    }}
-                >
-                    {/* <img className="avatar" src={user.avatar} alt={user.title} /> */}
-                    <div className="chat-info">
-                        <div className="chat-title">{chat.id}</div>
-                        {/* <label className="last-message">{chat.messages[0]}</label> */}
+                )
+            });
+        } else if (state.searchUsers.length != 0) {
+            chats = state.searchUsers.map((user: User, i: number) => {
+                return (
+                    // <UserChat
+                    //     keyProp={`${user.id}_${i}`}
+                    //     clickHandler={() => {
+                        
+                    //     }}
+                    //     chat={chat}
+                    // />
+                    <div
+                        className="chat"
+                        key={`${user.id}_${i}_${user.email}`}
+                        onClick={() => {
+                            const chatExists = state.userChats.find((chat: Chat) => chat.id == user.id);
+                            dispatch({ type: 'selectedChat', payload: chatExists ? user.id : false });
+                            dispatch({ type: 'choosenUser', payload: user });
+                        }}
+                    >
+                        <div className="chat-info">
+                            <div className="chat-title">{user.name}</div>
+                        </div>
                     </div>
-                </div>
-            )
-        });
+                )
+            });
+        }
     }
 
     return (
@@ -345,112 +345,61 @@ const Chat: FC<any> = (props) => {
                 overflow: state.isMounted ? 'visible' : 'hidden'
             }}
         >
-            <Menu
-                className="menu-icon"
-                style={{
-                    transform: state.open ? 'rotate(0)' : 'rotate(180deg)',
-                    opacity: state.open ? 0 : 1
-                }}
-                onClick={() => dispatch({ type: 'open', payload: !state.open })}
-            />
-            <ArrowBack
-                className="menu-icon"
-                style={{
-                    transform: state.open ? 'rotate(0)' : 'rotate(180deg)',
-                    opacity: state.open ? 1 : 0
-                }}
-                onClick={() => dispatch({ type: 'open', payload: !state.open })}
-            />
-            <SidebarChats
-                open={state.open}
-            />
-            <div className="search">
-                <input
-                    type="text"
-                    className="search-input"
-                    id="searchInput"
-                    placeholder="Search people..."
-                    onFocus={() => dispatch({ type: 'searchFocused', payload: !state.searchFocused })}
-                    onBlur={() => dispatch({ type: 'searchFocused', payload: !state.searchFocused })}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        dispatch({ type: 'searchValue', payload: e.target.value })
-                    }}
-                    value={state.searchValue}
-                />
-                <Send
-                    className="search-icon"
-                    style={{
-                        transform: state.searchValue || state.searchFocused ? 'rotate(0)' : 'rotate(-180deg)',
-                        opacity: state.searchValue || state.searchFocused ? 1 : 0,
-                        pointerEvents: state.searchValue || state.searchFocused ? 'all' : 'none'
-                    }}
-                    onClick={searchUsers}
-                />
+            <header className="header">
                 <Search
-                    className="search-icon"
-                    style={{
-                        transform: state.searchValue || state.searchFocused ? 'rotate(180deg)' : 'rotate(0)',
-                        opacity: state.searchValue || state.searchFocused ? 0 : 1,
-                        pointerEvents: 'none'
-                    }}
-                    onClick={searchUsers}
+                    searchUsers={searchUsers}
+                    cancelSearching={cancelSearching}
                 />
-            </div>
-            <div
-                className="chatting"
-                onClick={() => {
-                    if (state.open == true) dispatch({ type: 'open', payload: false })
-                }}
-            >
-                <div className="chats">
-                    {chats}
-                </div>
-                {state.selectedChat == 0
-                    ? (
-                        <div className="select-chat">
-                            Choose the chat to send message to someone
-                        </div>
-                    ) : (
-                        <>
-                            <div
-                                className="chat-wrap"
-                                style={{
-                                    opacity: state.open ? .5 : 1,
-                                    cursor: state.open ? 'default' : 'auto'
-                                }}
-                            >
-                                <form
-                                    onSubmit={sendMessage}
-                                    className="send-message-form col s6"
+            </header>
+            <SidebarChats />
+            <main className="main">
+                <div className="chatting">
+                    <div className="chats">
+                        {chats}
+                    </div>
+                    {!(typeof state.selectedChat == 'boolean') && state.selectedChat == 0
+                        ? (
+                            <div className="select-chat">
+                                Choose the chat to send message to someone
+                            </div>
+                        ) : (
+                            <>
+                                <div
+                                    className="chat-wrap"
                                 >
-                                    <TextField
-                                        name="sendMessage"
-                                        id="send-message"
-                                        type="text"
-                                        className="send-message"
-                                        label="Send message"
-                                        variant="standard"
-                                        color="primary"
-                                    />
-                                </form>
-                                <div id="chat-body" className="chatBody">
-                                    {state.requestMaking &&
-                                        <CircularProgress className="circular-progress" />
-                                    }
-                                    <div
-                                        className="container"
-                                        style={{
-                                            opacity: state.requestMaking ? 0 : 1
-                                        }}
+                                    <form
+                                        onSubmit={sendMessage}
+                                        className="send-message-form col s6"
                                     >
-                                        {messages}
+                                        <TextField
+                                            name="sendMessage"
+                                            id="send-message"
+                                            type="text"
+                                            className="send-message"
+                                            label="Send message"
+                                            variant="standard"
+                                            color="primary"
+                                        />
+                                    </form>
+                                    <div id="chat-body" className="chatBody">
+                                        {state.requestMaking &&
+                                            <CircularProgress className="circular-progress" />
+                                        }
+                                        <div
+                                            className="container"
+                                            style={{
+                                                opacity: state.requestMaking ? 0 : 1
+                                            }}
+                                        >
+                                            {messages}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </>
-                    )
-                }
-            </div>
+                            </>
+                        )
+                    }
+                </div>
+            </main>
         </div>
     )
 }

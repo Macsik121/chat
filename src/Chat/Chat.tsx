@@ -13,6 +13,7 @@ const UserChat: FC<ChatProps> = (props) => {
         clickHandler,
         chat
     } = props;
+    console.log(keyProp);
     return (
         <div
             className="chat"
@@ -20,7 +21,7 @@ const UserChat: FC<ChatProps> = (props) => {
             onClick={clickHandler}
         >
             <div className="chat-info">
-                <div className="chat-title">{chat.id}</div>
+                <div className="chat-title">{chat.title}</div>
             </div>
         </div>
     )

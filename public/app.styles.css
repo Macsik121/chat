@@ -15,6 +15,7 @@
     --base-font-size: 1.25vw;
     --base-color: #fff;
     height: 100%;
+    scroll-behavior: smooth;
 }
 
 body {
@@ -38,7 +39,6 @@ body {
     display: flex;
     margin: 0;
     width: 100%;
-    height: 100%;
     display: flex;
     flex-direction: column;
     --send-message-form-height: 70px;
@@ -47,7 +47,7 @@ body {
     --menu-icon-width: 40px;
 }
 
-.chat .menu-icon {
+.chat .sidebar-wrap .menu-icon {
     width: var(--menu-icon-width);
     height: var(--menu-icon-width);
     cursor: pointer;
@@ -176,7 +176,6 @@ body {
 
 .chat .chatting .chats {
     width: var(--sidebar-width);
-    height: 100%;
 }
 
 .chat .chatting .chats .start-messaging {
@@ -215,6 +214,7 @@ body {
 .chat .chatBody {
     height: calc(100% - var(--send-message-form-height));
     overflow: auto;
+    transition: 300ms;
 }
 
 .chat .chatBody .container {
