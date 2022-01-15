@@ -115,24 +115,28 @@ const Chat: FC<any> = (props) => {
         }
     }, [state.userChats]);
     function configureSocket() {
-        const socket = socketClient(uiEndpoint);
-	alert('uiEndpoint: ' + uiEndpoint)
-        socket.on('text message', ({ message: { chatID, message } }) => {
-	    alert('message is rendered')
+	try {
+	  const socket = socketClient(uiEndpoint);
+          alert('uiEndpoint: ' + uiEndpoint
+	  socket.on('text message', ({ message: { chatID, message } }) => {
+            alert('message is rendered')
             const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
             if (certainChat) {
-                const msg: Message = {
-                    text: message.text,
-                    owner: message.owner
-                };
-                const userChats = [...state.userChats];
-                certainChat.messages.push(msg);
-                dispatch({ type: 'userChats', payload: userChats });
+              const msg: Message = {
+                  text: message.text,
+                  owner: message.owner
+              };
+              const userChats = [...state.userChats];
+              certainChat.messages.push(msg);
+              dispatch({ type: 'userChats', payload: userChats });
                 const chatBody = document.getElementById('chat-body') as HTMLDivElement;
                 chatBody.scrollTop = chatBody.scrollHeight;
-            }
-        });
-        dispatch({ type: 'socket', payload: socket });
+	      }
+	  });
+	  dispatch({ type: 'socket', payload: socket });
+	} catch (e) {
+	  console.log(e);
+	}
     }
     async function sendMessage(e: React.FormEvent) {
         e.preventDefault();
