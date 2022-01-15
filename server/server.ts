@@ -16,7 +16,7 @@ const httpServer = http.createServer(app);
 //     cert: fs.readFileSync('cert.pem')
 // };
 // const httpsServer = https.createServer(options, app);
-const io = new Server(httpServer);
+const io = new Server(app);
 const { env } = process;
 const port: number = Number(env.PORT) || 8000;
 
