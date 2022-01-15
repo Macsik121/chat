@@ -212,6 +212,7 @@ const Chat: FC<any> = (props) => {
                 chat: id
             };
             await fetchData(query, vars);
+	    alert('a message has saved in the db')
         }
     }
 
