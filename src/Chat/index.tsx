@@ -117,7 +117,7 @@ const Chat: FC<any> = (props) => {
     function configureSocket() {
 	try {
 	  const socket = socketClient(uiEndpoint);
-          alert('uiEndpoint: ' + uiEndpoint
+          alert('uiEndpoint: ' + uiEndpoint)
 	  socket.on('text message', ({ message: { chatID, message } }) => {
             alert('message is rendered')
             const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
