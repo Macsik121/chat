@@ -116,7 +116,9 @@ const Chat: FC<any> = (props) => {
     }, [state.userChats]);
     function configureSocket() {
         const socket = socketClient(uiEndpoint);
+	alert('uiEndpoint: ' + uiEndpoint)
         socket.on('text message', ({ message: { chatID, message } }) => {
+	    alert('message is rendered')
             const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
             if (certainChat) {
                 const msg: Message = {
@@ -198,6 +200,7 @@ const Chat: FC<any> = (props) => {
             }
         }
         if (!msgSent) {
+	    alert('before socket emitting on frontend');
             state.socket.emit('text message', { message: msg, chatID: id });
             const query = `
                 mutation saveMessage($message: MessageInput!, $chat: Int!) {
