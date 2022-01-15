@@ -16,7 +16,7 @@ const httpServer = http.createServer(app);
 //     cert: fs.readFileSync('cert.pem')
 // };
 // const httpsServer = https.createServer(options, app);
-const io = new Server(app);
+const io = new Server(httpServer);
 const { env } = process;
 const port: number = Number(env.PORT) || 8000;
 
@@ -27,6 +27,7 @@ app.use('/', express.static('public'));
 
 io.on('connection', (socket) => {
     socket.on('text message', (message: Message, chatID: number) => {
+	console.log('A message has to be sent on frontend)');
         io.emit('text message', {
             message,
             chatID
