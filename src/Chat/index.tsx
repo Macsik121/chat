@@ -116,8 +116,9 @@ const Chat: FC<any> = (props) => {
     }, [state.userChats]);
     function configureSocket() {
 	try {
+	  alert('before socket connection');
 	  const socket = socketClient(uiEndpoint);
-          alert('uiEndpoint: ' + uiEndpoint)
+          alert('after...')
 	  socket.on('text message', ({ message: { chatID, message } }) => {
             alert('message is rendered')
             const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
@@ -135,7 +136,7 @@ const Chat: FC<any> = (props) => {
 	  });
 	  dispatch({ type: 'socket', payload: socket });
 	} catch (e) {
-	  console.log(e);
+	  alert(e);
 	}
     }
     async function sendMessage(e: React.FormEvent) {
