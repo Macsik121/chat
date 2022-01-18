@@ -11,10 +11,11 @@
     --base-color: #fff;
     height: 100%;
     scroll-behavior: smooth;
+    font-size: 16px;
 }
 
 body {
-    font-size: var(--base-font-size);
+    font-size: calc(var(--base-font-size) + .2em);
     background-color: #333;
     color: var(--base-color);
     font-family: Roboto, sans-serif;
@@ -34,6 +35,7 @@ body {
     display: flex;
     margin: 0;
     width: 100%;
+    overflow: hidden;
     --send-message-form-height: 70px;
     --sidebar-width: 350px;
     --sidebar-padding: 10px;
@@ -267,46 +269,43 @@ body {
     background-color: #0f3e77;
 }
 
-.chat .chatBody .msg .wrap::after {
-    content: "22:36";
-    position: absolute;
-    right: 8px;
-    bottom: 2px;
-    font-size: .9vw;
-    color: #b8b8b8;
-}
-
 .chat .chatBody .msg .wrap {
     background-color: #165aaf;
     word-break: break-word;
     max-width: 90%;
     position: relative;
+    padding: 5px calc(var(--date-width) + 10px) 5px 10px;
+    --date-width: 32px;
 }
 
-.chat .chatBody .someone-elses-msg .wrap {
-    background-color: rgb(36, 36, 63);
+.chat .chatBody .msg .wrap .date {
+    position: absolute;
+    right: 7px;
+    bottom: 2px;
+    font-size: 12px;
+    color: #b8b8b8;
 }
 
 .chat .main .chat-info {
     height: var(--search-height);
     display: flex;
     align-items: center;
-    padding-left: calc(var(--sidebar-padding) * 2 / 1.25);
+    --padding: calc(var(--sidebar-padding) * 2 / 1.25);
 }
 
 .chat .main .chat-info.active {
     background-color: #1E75FF;
 }
 
-@media (max-width: 750px) {
-    body {
-        font-size: 3.5vw
-    }
+.chat .main .chat-info .arrow-back {
+    cursor: pointer;
+    margin-left: var(--padding);
 }
-@media (max-width: 500px) {
-    body {
-        font-size: 5vw;
-    }
+
+.chat .main .chat-info .title {
+    display: flex;
+    align-items: center;
+    margin-left: var(--padding);
 }
 
 .auth-forms .signup input {
@@ -315,4 +314,44 @@ body {
 
 .auth-forms {
     display: flex;
+}
+
+@media (min-width: 700px) {
+    .chat .sidebar h1 {
+        font-size: 30px;
+    }
+}
+
+@media (max-width: 700px) {
+    body {
+        font-size: calc(var(--base-font-size) + .55em);
+    }
+    .chat .header {
+        max-width: initial;
+        min-width: 100vw;
+        z-index: 1;
+    }
+    .chat .header .search {
+        width: 100%;
+    }
+    .chat .main {
+        min-width: 100vw;
+        transform: translateX(100%);
+        z-index: 2;
+        background-color: #1C1C24;
+        opacity: 0;
+        transition: 400ms;
+        height: 100vh;
+    }
+    .chat .main.active {
+        transform: translateX(-100%);
+        opacity: 1;
+        transition: 300ms;
+    }
+}
+
+@media (max-width: 350px) {
+    .chat .sidebar {
+        width: 100%;
+    }
 }

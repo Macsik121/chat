@@ -14,7 +14,6 @@ const browserConfig = {
     resolve: {
         extensions: [ '.js', '.ts', '.tsx' ]
     },
-    watch: true,
     module: {
         rules: [
             {
@@ -28,11 +27,10 @@ const browserConfig = {
             }
         ]
     },
-    devtool: 'source-map',
-    optimization: {
-        minimize: true,
-        minimizer: [new CssMinimizerWebpackPlugin(), new TerserWebpackPlugin()]
-    },
+    // optimization: {
+    //     minimize: true,
+    //     minimizer: [new CssMinimizerWebpackPlugin(), new TerserWebpackPlugin()]
+    // },
     plugins: [
         new MiniCssExtractPlugin({
             filename: '[name].styles.css'

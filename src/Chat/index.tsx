@@ -62,10 +62,17 @@ const Chat: FC<any> = (props) => {
         id: 0,
         chats: []
     };
-    window.onkeydown = function(e) {
-        if (e.keyCode == 27) {
+    function closeChat() {
+        if (window.screen.width > 700) {
             dispatch({ type: 'selectedChat', payload: 0 });
             dispatch({ type: 'choosenUser', payload: {} });
+        }
+        const main = document.getElementById('main') as HTMLDivElement;
+        if (main) main.classList.remove('active');
+    }
+    window.onkeydown = function(e) {
+        if (e.keyCode == 27) {
+            closeChat();
         }
     }
     let isSnitch = false;
@@ -77,16 +84,6 @@ const Chat: FC<any> = (props) => {
                 return;
             }
             configureSocket();
-            // const query = `
-            //     query generateNewJwt($name: String!) {
-            //         generateNewJwt(name: $name)
-            //     }
-            // `;
-            // const oldUser: User = jwtDecode(localStorage.getItem('token') || '');
-            // const vars = {
-            //     name: oldUser.name
-            // };
-            // const { generateNewJwt } = await fetchData(query, vars);
             user = jwtDecode(localStorage.getItem('token') || '');
             const { chats } = await fetchData(`
                 query chats($id: Int!) {
@@ -100,6 +97,7 @@ const Chat: FC<any> = (props) => {
                         messages {
                             text
                             owner
+                            date
                         }
                     }
                 }
@@ -122,38 +120,42 @@ const Chat: FC<any> = (props) => {
         }
     }, [state.userChats]);
     function configureSocket() {
-	  const socket = socketClient(uiEndpoint);
-	  socket.on('text message',
-        ({
-            message: {
-                chatID,
-                message
-            }
-        }: {
-            message: {
-                chatID: number;
+        const socket = socketClient(uiEndpoint);
+        // const newState = { ...state };
+        if (!state.socketConfigured) {
+            socket.on('text message',
+            ({
                 message: {
-                    text: string;
-                    owner: number;
-                };
-            }
-        }) => {
-            const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
-            if (certainChat) {
-                const msg: Message = {
-                    text: message.text,
-                    owner: message.owner
-                };
-                const userChats = [...state.userChats];
-                certainChat.messages.push(msg);
-                dispatch({ type: 'userChats', payload: userChats });
-                const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
-                chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
-	        }
-	    });
-        socket.on('room creation', (chat) => {
-            // console.log('chat:', chat);
-        });
+                    chatID,
+                    message
+                }
+            }: {
+                message: {
+                    chatID: number;
+                    message: {
+                        text: string;
+                        owner: number;
+                    };
+                }
+            }) => {
+                const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
+                if (certainChat) {
+                    const msg: Message = {
+                        text: message.text,
+                        owner: message.owner,
+                        date: new Date()
+                    };
+                    const userChats = [...state.userChats];
+                    certainChat.messages.push(msg);
+                    dispatch({ type: 'userChats', payload: userChats });
+                    const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
+                    chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                }
+            });
+            socket.on('room creation', (chat) => {
+                // console.log('chat:', chat);
+            });
+        }
 	    dispatch({ type: 'socket', payload: socket });
     }
     async function sendMessage(e: React.FormEvent) {
@@ -162,9 +164,10 @@ const Chat: FC<any> = (props) => {
         if (message.sendMessage.value == '') {
             return;
         }
-        const msg = {
+        const msg: Message = {
             text: message.sendMessage.value,
-            owner: user.id
+            owner: user.id,
+            date: new Date()
         }
         message.sendMessage.value = '';
         let id = state.selectedChat;
@@ -197,7 +200,6 @@ const Chat: FC<any> = (props) => {
                 }
                 newUserChats.push(newChat);
                 id = chatId;
-                dispatch({ type: 'socketConfigured', payload: false });
                 dispatch({ type: 'userChats', payload: newUserChats });
                 dispatch({ type: 'selectedChat', payload: chatId });
                 state.socket.emit('room creation', { chat: newChat });
@@ -252,15 +254,15 @@ const Chat: FC<any> = (props) => {
             id: user.id
         }
         let { searchUsers } = await fetchData(query, vars);
-        searchUsers.map((user: any, i: number) => {
-            const certainUser: Chat = state.userChats.find((chatUser: Chat) => (
-                chatUser.competitors[0].name == user.name ||
-                chatUser.competitors[1].name == user.name
-            ));
-            if (certainUser) {
-                user.id = certainUser.id;
-            }
-        });
+        // searchUsers.forEach((user: any, i: number) => {
+            // const certainUser: Chat = state.userChats.find((chatUser: Chat) => (
+            //     chatUser.competitors[0].name == user.name ||
+            //     chatUser.competitors[1].name == user.name
+            // ));
+            // if (certainUser) {
+            //     user.id = certainUser.id;
+            // }
+        // });
         dispatch({ type: 'searchUsers', payload: searchUsers });
     }
 
@@ -274,6 +276,7 @@ const Chat: FC<any> = (props) => {
         if (certainChat && certainChat.messages) {
             messages = certainChat.messages.map((message: Message, i: number) => {
                 const key = message.text + message.owner + i + certainChat.id;
+                const msgDate = new Date(message.date);
                 return (
                     <div
                         className={`${
@@ -284,9 +287,18 @@ const Chat: FC<any> = (props) => {
                         }
                         key={key}
                     >
-                        <span className="wrap">
-                            {message.text}
-                        </span>
+                        <div className="wrap">
+                            <div className="text">
+                                {message.text}
+                            </div>
+                            <div className="date">
+                                {
+                                    msgDate.getHours()
+                                }:{
+                                    msgDate.getMinutes()
+                                }
+                            </div>
+                        </div>
                     </div>
                 )
             });
@@ -325,9 +337,13 @@ const Chat: FC<any> = (props) => {
                                     )
                                 }
                             });
+                            const main = document.getElementById('main') as HTMLDivElement;
+                            console.log('main:', main);
+                            if (main) main.classList.add('active');
                             // if (state.chatBody && JSON.stringify(state.chatBody) != '{}')
                             //     state.chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
-                            const chatBody = document.getElementById('chat-body-container');
+                            // const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
+                            // console.log(chatBody);
                             // if (chatBody) chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
                         }}
                     >
@@ -376,8 +392,7 @@ const Chat: FC<any> = (props) => {
             className="chat"
             style={{
                 opacity: state.isMounted ? 1 : 0,
-                pointerEvents: state.isMounted ? 'all' : 'none',
-                overflow: state.isMounted ? 'visible' : 'hidden'
+                pointerEvents: state.isMounted ? 'all' : 'none'
             }}
         >
             <header className="header">
@@ -390,8 +405,11 @@ const Chat: FC<any> = (props) => {
                 </div>
             </header>
             <SidebarChats />
-            <main className="main">
-                <ChatInfo name={state.choosenUser.name} />
+            <main id="main" className="main">
+                <ChatInfo
+                    name={state.choosenUser.name}
+                    close={closeChat}
+                />
                 <div className="chatting">
                     {!(typeof state.selectedChat == 'boolean') && state.selectedChat == 0
                         ? (

@@ -23,4 +23,5 @@ export interface Competitor {
 export interface Message {
     text: string
     owner: number
+    date: Date
 }
