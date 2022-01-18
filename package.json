@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "engines": {
-    "node": "16.x"
+    "node": "17.x",
+    "npm": "8.x"
   },
   "scripts": {
     "start": "nodemon server/server.ts",
