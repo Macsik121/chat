@@ -28,6 +28,7 @@ const browserConfig = {
             }
         ]
     },
+    devtool: 'source-map',
     optimization: {
         minimize: true,
         minimizer: [new CssMinimizerWebpackPlugin(), new TerserWebpackPlugin()]
