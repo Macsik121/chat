@@ -4,11 +4,9 @@ import express from 'express';
 import http from 'http';
 // import https from 'https';
 import { Server } from 'socket.io';
-import fs from 'fs';
-import path from 'path';
-// import cors from 'cors';
-// import render from './render';
-import { Message } from '../src/interfaces';
+// import fs from 'fs';
+// import path from 'path';
+import { Message, Chat } from '../src/interfaces';
 const app = express();
 const httpServer = http.createServer(app);
 // const options = {
@@ -20,10 +18,7 @@ const io = new Server(httpServer);
 const { env } = process;
 const port: number = Number(env.PORT) || 8000;
 
-// app.use(cors());
-// app.use('/', express.static(path.resolve(__dirname, './public')));
 app.use('/', express.static('public'));
-// app.get('*', render);
 
 io.on('connection', (socket) => {
     socket.on('text message', (message: Message, chatID: number) => {
@@ -31,6 +26,9 @@ io.on('connection', (socket) => {
             message,
             chatID
         });
+    });
+    socket.on('room creation', (chat: Chat) => {
+        io.emit('room creation', chat);
     });
 });
 

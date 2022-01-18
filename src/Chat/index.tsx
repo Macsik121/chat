@@ -57,11 +57,17 @@ const initState = {
 const Chat: FC<any> = (props) => {
     const [state, dispatch] = useReducer(reducer, initState);
     let user: User = {
-        name: '',                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+        name: '',
         email: '',
         id: 0,
         chats: []
     };
+    window.onkeydown = function(e) {
+        if (e.keyCode == 27) {
+            dispatch({ type: 'selectedChat', payload: 0 });
+            dispatch({ type: 'choosenUser', payload: {} });
+        }
+    }
     let isSnitch = false;
     useEffect(() => {
         (async () => {
@@ -100,7 +106,6 @@ const Chat: FC<any> = (props) => {
             `, {
                 id: user.id
             })
-            // localStorage.setItem('token', generateNewJwt);
             dispatch({ type: 'isMounted', payload: true });
             dispatch({ type: 'userChats', payload: chats });
         })()
@@ -146,6 +151,9 @@ const Chat: FC<any> = (props) => {
                 chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
 	        }
 	    });
+        socket.on('room creation', (chat) => {
+            // console.log('chat:', chat);
+        });
 	    dispatch({ type: 'socket', payload: socket });
     }
     async function sendMessage(e: React.FormEvent) {
@@ -192,6 +200,7 @@ const Chat: FC<any> = (props) => {
                 dispatch({ type: 'socketConfigured', payload: false });
                 dispatch({ type: 'userChats', payload: newUserChats });
                 dispatch({ type: 'selectedChat', payload: chatId });
+                state.socket.emit('room creation', { chat: newChat });
                 state.socket.emit('text message', { message: msg, chatID: id });
                 await fetchData(`
                     mutation createRoom(
@@ -264,6 +273,7 @@ const Chat: FC<any> = (props) => {
         const certainChat: Chat = state.userChats.find((chat: Chat) => chat.id == state.selectedChat);
         if (certainChat && certainChat.messages) {
             messages = certainChat.messages.map((message: Message, i: number) => {
+                const key = message.text + message.owner + i + certainChat.id;
                 return (
                     <div
                         className={`${
@@ -272,7 +282,7 @@ const Chat: FC<any> = (props) => {
                                 : ''
                             }msg`
                         }
-                        key={message.text + message.owner + i + certainChat.id}
+                        key={key}
                     >
                         <span className="wrap">
                             {message.text}
@@ -297,19 +307,11 @@ const Chat: FC<any> = (props) => {
     ) {
         if (state.searchUsers.length == 0 && state.userChats.length != 0) {
             chats = state.userChats.map((chat: Chat, i: number) => {
+                const key = `${chat.id} ${i} ${chat.messages[0] ? chat.messages[0].text + chat.messages[0].owner : ''}`;
                 return (
-                    // <UserChat
-                    //     keyProp={`${chat.id}_${i}_${chat.messages[0].text + chat.messages[0].owner}`}
-                    //     clickHandler={() => {
-                    //         dispatch({ type: 'selectedChat', payload: chat.id });
-                    //         // const chatBody = document.getElementById('chat-body') as HTMLDivElement;
-                    //         // chatBody.scroll(0, chatBody.scrollHeight);
-                    //     }}
-                    //     chat={chat}
-                    // />
                     <div
                         className="chat"
-                        key={`${chat.id}_${i}_${chat.messages[0] ? chat.messages[0].text + chat.messages[0].owner : chat.messages}`}
+                        key={key}
                         onClick={() => {
                             dispatch({ type: 'selectedChat', payload: chat.id });
                             dispatch({
@@ -342,6 +344,7 @@ const Chat: FC<any> = (props) => {
             });
         } else if (state.searchUsers.length != 0) {
             chats = state.searchUsers.map((user: User, i: number) => {
+                const key = `${user.id} ${i} ${user.email}`;
                 return (
                     // <UserChat
                     //     keyProp={`${user.id}_${i}`}
@@ -352,7 +355,7 @@ const Chat: FC<any> = (props) => {
                     // />
                     <div
                         className="chat"
-                        key={`${user.id}_${i}_${user.email}`}
+                        key={key}
                         onClick={() => {
                             const chatExists = state.userChats.find((chat: Chat) => chat.id == user.id);
                             dispatch({ type: 'selectedChat', payload: chatExists ? user.id : false });
