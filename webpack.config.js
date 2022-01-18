@@ -1,5 +1,7 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin');
+const TerserWebpackPlugin = require('terser-webpack-plugin');
 const nodeExternals = require('webpack-node-externals');
 
 const browserConfig = {
@@ -25,6 +27,10 @@ const browserConfig = {
                 use: [MiniCssExtractPlugin.loader, 'css-loader']
             }
         ]
+    },
+    optimization: {
+        minimize: true,
+        minimizer: [new CssMinimizerWebpackPlugin(), new TerserWebpackPlugin()]
     },
     plugins: [
         new MiniCssExtractPlugin({
