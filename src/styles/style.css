@@ -34,12 +34,16 @@ body {
     display: flex;
     margin: 0;
     width: 100%;
-    display: flex;
-    flex-direction: column;
     --send-message-form-height: 70px;
     --sidebar-width: 350px;
     --sidebar-padding: 10px;
     --menu-icon-width: 40px;
+    --search-height: calc(var(--menu-icon-width) + var(--sidebar-padding));
+}
+
+.chat .header {
+    min-height: 100%;
+    max-width: var(--sidebar-width);
 }
 
 .chat .sidebar-wrap .menu-icon {
@@ -118,8 +122,7 @@ body {
 }
 
 .chat .search {
-    position: absolute;
-    height: calc(var(--menu-icon-width) + var(--sidebar-padding));
+    height: var(--search-height);
     width: var(--sidebar-width);
     background-color: #1E75FF;
     color: #fff;
@@ -165,6 +168,10 @@ body {
     cursor: pointer;
 }
 
+.chat .main {
+    width: 100%;
+}
+
 .chat .chatting {
     display: flex;
 }
@@ -181,24 +188,26 @@ body {
 
 .chat .send-message-form {
     padding: var(--sidebar-padding);
-    position: absolute;
     left: 0;
     bottom: 0;
     width: 100%;
+    color: #fff;
 }
 
 .chat .send-message-form .send-message {
     width: 100%;
-    color: var(--base-color);
+}
+
+.chat .send-message-form .send-message input {
+    color: #fff;
 }
 
 .chat .chat-wrap {
     height: 100%;
-    position: absolute;
+    width: 100%;
     top: 0;
     right: 0;
     transition: 300ms;
-    width: calc(100% - var(--sidebar-width));
 }
 
 .chat .input-field {
@@ -207,7 +216,7 @@ body {
 }
 
 .chat .chatBody {
-    height: calc(100% - var(--send-message-form-height));
+    height: calc(100vh - var(--send-message-form-height) - var(--search-height));
     overflow: auto;
     transition: 300ms;
 }
@@ -276,6 +285,17 @@ body {
 
 .chat .chatBody .someone-elses-msg .wrap {
     background-color: rgb(36, 36, 63);
+}
+
+.chat .main .chat-info {
+    height: var(--search-height);
+    display: flex;
+    align-items: center;
+    padding-left: calc(var(--sidebar-padding) * 2 / 1.25);
+}
+
+.chat .main .chat-info.active {
+    background-color: #1E75FF;
 }
 
 @media (max-width: 750px) {

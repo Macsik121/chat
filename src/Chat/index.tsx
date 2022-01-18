@@ -32,7 +32,7 @@ type Reducer = (state: ChatState, action: any) => any;
 
 const reducer: Reducer = function(state: any, action) {
     if (state[action.type] == undefined) {
-        throw Error('You have called dispatch. You wrote a wrong action.type. Check if dispatch has state variable you passed, or you just made a typo');
+        throw Error('You called dispatch. You wrote a wrong action.type. Check if dispatch has state variable you passed, or you just made a typo');
     }
     const newState = {
         ...state,
@@ -49,7 +49,9 @@ const initState = {
     userChats: [],
     selectedChat: 0,
     socketConfigured: false,
-    choosenUser: {}
+    choosenUser: {},
+    chatBody: {},
+    chatBodySet: false
 };
 
 const Chat: FC<any> = (props) => {
@@ -116,21 +118,35 @@ const Chat: FC<any> = (props) => {
     }, [state.userChats]);
     function configureSocket() {
 	  const socket = socketClient(uiEndpoint);
-	  socket.on('text message', ({ message: { chatID, message } }) => {
+	  socket.on('text message',
+        ({
+            message: {
+                chatID,
+                message
+            }
+        }: {
+            message: {
+                chatID: number;
+                message: {
+                    text: string;
+                    owner: number;
+                };
+            }
+        }) => {
             const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
             if (certainChat) {
-              const msg: Message = {
-                  text: message.text,
-                  owner: message.owner
-              };
-              const userChats = [...state.userChats];
-              certainChat.messages.push(msg);
-              dispatch({ type: 'userChats', payload: userChats });
-                const chatBody = document.getElementById('chat-body') as HTMLDivElement;
-                chatBody.scrollTop = chatBody.scrollHeight;
-	      }
-	  });
-	  dispatch({ type: 'socket', payload: socket });
+                const msg: Message = {
+                    text: message.text,
+                    owner: message.owner
+                };
+                const userChats = [...state.userChats];
+                certainChat.messages.push(msg);
+                dispatch({ type: 'userChats', payload: userChats });
+                const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
+                chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
+	        }
+	    });
+	    dispatch({ type: 'socket', payload: socket });
     }
     async function sendMessage(e: React.FormEvent) {
         e.preventDefault();
@@ -254,7 +270,8 @@ const Chat: FC<any> = (props) => {
                             user.id == message.owner
                                 ? 'my-msg '
                                 : ''
-                            }msg`}
+                            }msg`
+                        }
                         key={message.text + message.owner + i + certainChat.id}
                     >
                         <span className="wrap">
@@ -295,6 +312,21 @@ const Chat: FC<any> = (props) => {
                         key={`${chat.id}_${i}_${chat.messages[0] ? chat.messages[0].text + chat.messages[0].owner : chat.messages}`}
                         onClick={() => {
                             dispatch({ type: 'selectedChat', payload: chat.id });
+                            dispatch({
+                                type: 'choosenUser',
+                                payload: {
+                                    name: (
+                                        chat.title ||
+                                        chat.competitors[0].name == user.name
+                                            ? chat.competitors[1].name
+                                            : chat.competitors[0].name
+                                    )
+                                }
+                            });
+                            // if (state.chatBody && JSON.stringify(state.chatBody) != '{}')
+                            //     state.chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                            const chatBody = document.getElementById('chat-body-container');
+                            // if (chatBody) chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
                         }}
                     >
                         <div className="chat-info">
@@ -350,13 +382,14 @@ const Chat: FC<any> = (props) => {
                     searchUsers={searchUsers}
                     cancelSearching={cancelSearching}
                 />
+                <div className="chats">
+                    {chats}
+                </div>
             </header>
             <SidebarChats />
             <main className="main">
+                <ChatInfo name={state.choosenUser.name} />
                 <div className="chatting">
-                    <div className="chats">
-                        {chats}
-                    </div>
                     {!(typeof state.selectedChat == 'boolean') && state.selectedChat == 0
                         ? (
                             <div className="select-chat">
@@ -367,6 +400,20 @@ const Chat: FC<any> = (props) => {
                                 <div
                                     className="chat-wrap"
                                 >
+                                    <div id="chat-body" className="chatBody">
+                                        {state.requestMaking &&
+                                            <CircularProgress className="circular-progress" />
+                                        }
+                                        <div
+                                            className="container"
+                                            style={{
+                                                opacity: state.requestMaking ? 0 : 1
+                                            }}
+                                            id="chat-body-container"
+                                        >
+                                            {messages}
+                                        </div>
+                                    </div>
                                     <form
                                         onSubmit={sendMessage}
                                         className="send-message-form col s6"
@@ -378,22 +425,8 @@ const Chat: FC<any> = (props) => {
                                             className="send-message"
                                             label="Send message"
                                             variant="standard"
-                                            color="primary"
                                         />
                                     </form>
-                                    <div id="chat-body" className="chatBody">
-                                        {state.requestMaking &&
-                                            <CircularProgress className="circular-progress" />
-                                        }
-                                        <div
-                                            className="container"
-                                            style={{
-                                                opacity: state.requestMaking ? 0 : 1
-                                            }}
-                                        >
-                                            {messages}
-                                        </div>
-                                    </div>
                                 </div>
                             </>
                         )

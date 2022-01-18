@@ -26,9 +26,7 @@ app.use('/', express.static('public'));
 // app.get('*', render);
 
 io.on('connection', (socket) => {
-    console.log('the connectuon us happened');
     socket.on('text message', (message: Message, chatID: number) => {
-	console.log('A message has to be sent on frontend)');
         io.emit('text message', {
             message,
             chatID

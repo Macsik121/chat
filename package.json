@@ -7,7 +7,7 @@
     "node": "16.x"
   },
   "scripts": {
-    "start": "ts-node server/server.ts",
+    "start": "nodemon server/server.ts",
     "heroku-postbuild": "npx webpack --mode production"
   },
   "keywords": [],

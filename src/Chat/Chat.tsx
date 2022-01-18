@@ -13,7 +13,6 @@ const UserChat: FC<ChatProps> = (props) => {
         clickHandler,
         chat
     } = props;
-    console.log(keyProp);
     return (
         <div
             className="chat"

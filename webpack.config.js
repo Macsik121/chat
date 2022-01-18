@@ -12,6 +12,7 @@ const browserConfig = {
     resolve: {
         extensions: [ '.js', '.ts', '.tsx' ]
     },
+    watch: true,
     module: {
         rules: [
             {
