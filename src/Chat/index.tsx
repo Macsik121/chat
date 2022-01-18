@@ -115,12 +115,8 @@ const Chat: FC<any> = (props) => {
         }
     }, [state.userChats]);
     function configureSocket() {
-	try {
-	  alert('before socket connection');
 	  const socket = socketClient(uiEndpoint);
-          alert('after...')
 	  socket.on('text message', ({ message: { chatID, message } }) => {
-            alert('message is rendered')
             const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
             if (certainChat) {
               const msg: Message = {
@@ -135,9 +131,6 @@ const Chat: FC<any> = (props) => {
 	      }
 	  });
 	  dispatch({ type: 'socket', payload: socket });
-	} catch (e) {
-	  alert(e);
-	}
     }
     async function sendMessage(e: React.FormEvent) {
         e.preventDefault();
@@ -205,7 +198,6 @@ const Chat: FC<any> = (props) => {
             }
         }
         if (!msgSent) {
-	    alert('before socket emitting on frontend');
             state.socket.emit('text message', { message: msg, chatID: id });
             const query = `
                 mutation saveMessage($message: MessageInput!, $chat: Int!) {
@@ -217,7 +209,6 @@ const Chat: FC<any> = (props) => {
                 chat: id
             };
             await fetchData(query, vars);
-	    alert('a message has saved in the db')
         }
     }
 
