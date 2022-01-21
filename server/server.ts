@@ -21,11 +21,13 @@ const port: number = Number(env.PORT) || 8000;
 app.use('/', express.static('public'));
 
 io.on('connection', (socket) => {
+    console.log(socket.id);
     socket.on('text message', ({ message, chatID, state }: { message: string, chatID: number, state: any }) => {
         io.emit('text message', {
             message,
             chatID,
-            state
+            state,
+            socketId: socket.id
         });
     });
     socket.on('room creation', ({ chat, state }: { chat: Chat, state: any }) => {

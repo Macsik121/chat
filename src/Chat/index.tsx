@@ -127,20 +127,20 @@ const Chat: FC<any> = (props) => {
             ({
                 chatID,
                 message,
-                state
+                state,
+                socketId
             }: {
                 chatID: number;
                 message: {
                     text: string;
                     owner: number;
                 },
+                socketId: string,
                 state: any
             }) => {
                 const userChats = [...state.userChats];
-                const certainChat = userChats.find((chat: Chat) => {
-                    return chat.id == chatID
-                });
-                if (certainChat) {
+                const certainChat = userChats.find((chat: Chat) => chat.id == chatID);
+                if (certainChat && socketId == socket.id) {
                     const msg: Message = {
                         text: message.text,
                         owner: message.owner,
@@ -212,7 +212,7 @@ const Chat: FC<any> = (props) => {
                 }
                 newUserChats.push(newChat);
                 socket.emit('room creation', { chat: newChat, state });
-                socket.emit('text message', { message: msg, chatID: id, state });
+                socket.emit('text message', { message: msg, chatID: id, state,  });
                 await fetchData(`
                     mutation createRoom(
                         $competitors: [CompetitorsInput!]!,
