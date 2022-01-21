@@ -166,7 +166,6 @@ const Chat: FC<any> = (props) => {
                 ) {
                     const userChats = [...state.userChats];
                     userChats.push(chat);
-                    dispatch({ type: 'selectedChat', payload: chat.id });
                     dispatch({ type: 'userChats', payload: userChats });
                 }
             });
@@ -317,7 +316,7 @@ const Chat: FC<any> = (props) => {
                                         ? '0' + hours
                                         : hours
                                 }:{
-                                    msgDate.getMinutes()
+                                    minutes < 10
                                         ? '0' + minutes
                                         : minutes
                                 }
