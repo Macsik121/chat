@@ -114,49 +114,69 @@ const Chat: FC<any> = (props) => {
         }
     }
     useEffect(() => {
-        if (JSON.stringify(state.userChats) !== JSON.stringify([]) && !state.socketConfigured) {
+        if (JSON.stringify(state.userChats) !== JSON.stringify([])) {
             configureSocket();
-            dispatch({ type: 'socketConfigured', payload: true });
+            if (!state.socketConfigured) dispatch({ type: 'socketConfigured', payload: true });
         }
     }, [state.userChats]);
     function configureSocket() {
-        const socket = socketClient(uiEndpoint);
-        // const newState = { ...state };
-        if (!state.socketConfigured) {
+        function setListeners(socket = state.socket) {
+            socket.removeAllListeners();
             socket.on('text message',
-            ({
-                message: {
-                    chatID,
-                    message
-                }
-            }: {
-                message: {
-                    chatID: number;
+                ({
                     message: {
-                        text: string;
-                        owner: number;
-                    };
-                }
-            }) => {
-                const certainChat = state.userChats.find((chat: Chat) => chat.id == chatID);
-                if (certainChat) {
-                    const msg: Message = {
-                        text: message.text,
-                        owner: message.owner,
-                        date: new Date()
-                    };
+                        chatID,
+                        message
+                    }
+                }: {
+                    message: {
+                        chatID: number;
+                        message: {
+                            text: string;
+                            owner: number;
+                        };
+                    }
+                }) => {
                     const userChats = [...state.userChats];
-                    certainChat.messages.push(msg);
+                    console.log('userChats from socket.io', userChats);
+                    const certainChat = userChats.find((chat: Chat) => {
+                        return chat.id == chatID
+                    });
+                    console.log('certainChat:', certainChat)
+                    if (certainChat) {
+                        const msg: Message = {
+                            text: message.text,
+                            owner: message.owner,
+                            date: new Date()
+                        };
+                        certainChat.messages.push(msg);
+                        console.log(userChats);
+                        dispatch({ type: 'userChats', payload: userChats });
+                        const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
+                        chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                    }
+                }
+            );
+            socket.on('room creation', (chat: Chat) => {
+                const chatExists = state.userChats.find((userChat: Chat) => userChat.id == chat.id);
+                if (
+                    !chatExists &&
+                    chat.competitors[0].name == user.name ||
+                    chat.competitors[1].name == user.name
+                ) {
+                    const userChats = [...state.userChats];
+                    userChats.push(chat);
+                    dispatch({ type: 'selectedChat', payload: chat.id });
                     dispatch({ type: 'userChats', payload: userChats });
-                    const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
-                    chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
                 }
             });
-            socket.on('room creation', (chat) => {
-                // console.log('chat:', chat);
-            });
+            dispatch({ type: 'socket', payload: socket });
         }
-	    dispatch({ type: 'socket', payload: socket });
+        let socket;
+        if (!state.socketConfigured) socket = socketClient(uiEndpoint);
+        if (socket) {
+            setListeners(socket);
+        } else setListeners();
     }
     async function sendMessage(e: React.FormEvent) {
         e.preventDefault();
@@ -193,16 +213,14 @@ const Chat: FC<any> = (props) => {
                     }
                 `);
                 const newUserChats = state.userChats.slice();
+                id = chatId;
                 const newChat: Chat = {
-                    id: chatId,
+                    id,
                     messages: [ msg ],
                     competitors
                 }
                 newUserChats.push(newChat);
-                id = chatId;
-                dispatch({ type: 'userChats', payload: newUserChats });
-                dispatch({ type: 'selectedChat', payload: chatId });
-                state.socket.emit('room creation', { chat: newChat });
+                state.socket.emit('room creation', newChat);
                 state.socket.emit('text message', { message: msg, chatID: id });
                 await fetchData(`
                     mutation createRoom(
@@ -219,7 +237,7 @@ const Chat: FC<any> = (props) => {
                 `, {
                     competitors,
                     message: msg,
-                    id: chatId
+                    id
                 });
                 msgSent = true;
             }
@@ -254,15 +272,15 @@ const Chat: FC<any> = (props) => {
             id: user.id
         }
         let { searchUsers } = await fetchData(query, vars);
-        // searchUsers.forEach((user: any, i: number) => {
-            // const certainUser: Chat = state.userChats.find((chatUser: Chat) => (
-            //     chatUser.competitors[0].name == user.name ||
-            //     chatUser.competitors[1].name == user.name
-            // ));
-            // if (certainUser) {
-            //     user.id = certainUser.id;
-            // }
-        // });
+        searchUsers.forEach((user: any, i: number) => {
+            const certainUser: Chat = state.userChats.find((chatUser: Chat) => (
+                chatUser.competitors[0].name == user.name ||
+                chatUser.competitors[1].name == user.name
+            ));
+            if (certainUser) {
+                user.id = certainUser.id;
+            }
+        });
         dispatch({ type: 'searchUsers', payload: searchUsers });
     }
 
@@ -277,6 +295,8 @@ const Chat: FC<any> = (props) => {
             messages = certainChat.messages.map((message: Message, i: number) => {
                 const key = message.text + message.owner + i + certainChat.id;
                 const msgDate = new Date(message.date);
+                const minutes = msgDate.getMinutes();
+                const hours = msgDate.getHours();
                 return (
                     <div
                         className={`${
@@ -293,9 +313,13 @@ const Chat: FC<any> = (props) => {
                             </div>
                             <div className="date">
                                 {
-                                    msgDate.getHours()
+                                    hours < 10
+                                        ? '0' + hours
+                                        : hours
                                 }:{
                                     msgDate.getMinutes()
+                                        ? '0' + minutes
+                                        : minutes
                                 }
                             </div>
                         </div>
@@ -338,12 +362,10 @@ const Chat: FC<any> = (props) => {
                                 }
                             });
                             const main = document.getElementById('main') as HTMLDivElement;
-                            console.log('main:', main);
                             if (main) main.classList.add('active');
                             // if (state.chatBody && JSON.stringify(state.chatBody) != '{}')
                             //     state.chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
                             // const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
-                            // console.log(chatBody);
                             // if (chatBody) chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
                         }}
                     >
@@ -359,8 +381,8 @@ const Chat: FC<any> = (props) => {
                 )
             });
         } else if (state.searchUsers.length != 0) {
-            chats = state.searchUsers.map((user: User, i: number) => {
-                const key = `${user.id} ${i} ${user.email}`;
+            chats = state.searchUsers.map((searchedUser: User, i: number) => {
+                const key = `${searchedUser.id} ${i} ${searchedUser.email}`;
                 return (
                     // <UserChat
                     //     keyProp={`${user.id}_${i}`}
@@ -373,13 +395,13 @@ const Chat: FC<any> = (props) => {
                         className="chat"
                         key={key}
                         onClick={() => {
-                            const chatExists = state.userChats.find((chat: Chat) => chat.id == user.id);
-                            dispatch({ type: 'selectedChat', payload: chatExists ? user.id : false });
-                            dispatch({ type: 'choosenUser', payload: user });
+                            const chatExists = state.userChats.find((chat: Chat) => chat.id == searchedUser.id);
+                            dispatch({ type: 'selectedChat', payload: chatExists ? searchedUser.id : false });
+                            dispatch({ type: 'choosenUser', payload: searchedUser });
                         }}
                     >
                         <div className="chat-info">
-                            <div className="chat-title">{user.name}</div>
+                            <div className="chat-title">{searchedUser.name}</div>
                         </div>
                     </div>
                 )
