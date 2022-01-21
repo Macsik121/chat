@@ -161,7 +161,9 @@ const Chat: FC<any> = (props) => {
                 chat.competitors[1].name == user.name
             ) {
                 const userChats = [...state.userChats];
+                console.log(userChats);
                 userChats.push(chat);
+                console.log(userChats);
                 if (user.id == chat.messages[0].owner) dispatch({ type: 'selectedChat', payload: chat.id });
                 dispatch({ type: 'userChats', payload: userChats });
             }
