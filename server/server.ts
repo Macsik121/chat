@@ -21,14 +21,15 @@ const port: number = Number(env.PORT) || 8000;
 app.use('/', express.static('public'));
 
 io.on('connection', (socket) => {
-    socket.on('text message', (message: Message, chatID: number) => {
+    socket.on('text message', ({ message, chatID, state }: { message: string, chatID: number, state: any }) => {
         io.emit('text message', {
             message,
-            chatID
+            chatID,
+            state
         });
     });
-    socket.on('room creation', (chat: Chat) => {
-        io.emit('room creation', chat);
+    socket.on('room creation', ({ chat, state }: { chat: Chat, state: any }) => {
+        io.emit('room creation', { chat, state });
     });
 });
 

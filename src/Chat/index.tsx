@@ -18,6 +18,8 @@ import globals from '../globals';
 
 const uiEndpoint = globals.__UI_SERVER_ENDPOINT__;
 
+const socket = socketClient(uiEndpoint);
+
 interface ChatState {
     requestMaking: boolean
     isMounted: boolean
@@ -75,12 +77,10 @@ const Chat: FC<any> = (props) => {
             closeChat();
         }
     }
-    let isSnitch = false;
     useEffect(() => {
-        (async () => {
+        (async function() {
             if (!localStorage.getItem('token')) {
                 props.history.push('/auth');
-                isSnitch = true;
                 return;
             }
             configureSocket();
@@ -106,76 +106,66 @@ const Chat: FC<any> = (props) => {
             })
             dispatch({ type: 'isMounted', payload: true });
             dispatch({ type: 'userChats', payload: chats });
-        })()
+        })();
+        return () => {
+            socket.removeAllListeners();
+        };
     }, []);
     if (user.id == 0) {
         if (localStorage.getItem('token')) {
             user = jwtDecode(localStorage.getItem('token') || '');
         }
     }
-    useEffect(() => {
-        if (JSON.stringify(state.userChats) !== JSON.stringify([])) {
-            configureSocket();
-            if (!state.socketConfigured) dispatch({ type: 'socketConfigured', payload: true });
-        }
-    }, [state.userChats]);
+    // useEffect(() => {
+    //     if (JSON.stringify(state.userChats) !== JSON.stringify([])) {
+    //         configureSocket();
+    //         if (!state.socketConfigured) dispatch({ type: 'socketConfigured', payload: true });
+    //     }
+    // }, [state.userChats]);
     function configureSocket() {
-        function setListeners(socket = state.socket) {
-            socket.removeAllListeners();
-            socket.on('text message',
-                ({
-                    message: {
-                        chatID,
-                        message
-                    }
-                }: {
-                    message: {
-                        chatID: number;
-                        message: {
-                            text: string;
-                            owner: number;
-                        };
-                    }
-                }) => {
-                    const userChats = [...state.userChats];
-                    console.log('userChats from socket.io', userChats);
-                    const certainChat = userChats.find((chat: Chat) => {
-                        return chat.id == chatID
-                    });
-                    console.log('certainChat:', certainChat)
-                    if (certainChat) {
-                        const msg: Message = {
-                            text: message.text,
-                            owner: message.owner,
-                            date: new Date()
-                        };
-                        certainChat.messages.push(msg);
-                        console.log(userChats);
-                        dispatch({ type: 'userChats', payload: userChats });
-                        const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
-                        chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
-                    }
-                }
-            );
-            socket.on('room creation', (chat: Chat) => {
-                const chatExists = state.userChats.find((userChat: Chat) => userChat.id == chat.id);
-                if (
-                    !chatExists &&
-                    chat.competitors[0].name == user.name ||
-                    chat.competitors[1].name == user.name
-                ) {
-                    const userChats = [...state.userChats];
-                    userChats.push(chat);
+        socket.on('text message',
+            ({
+                chatID,
+                message,
+                state
+            }: {
+                chatID: number;
+                message: {
+                    text: string;
+                    owner: number;
+                },
+                state: any
+            }) => {
+                const userChats = [...state.userChats];
+                const certainChat = userChats.find((chat: Chat) => {
+                    return chat.id == chatID
+                });
+                if (certainChat) {
+                    const msg: Message = {
+                        text: message.text,
+                        owner: message.owner,
+                        date: new Date()
+                    };
+                    certainChat.messages.push(msg);
                     dispatch({ type: 'userChats', payload: userChats });
+                    const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
+                    chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
                 }
-            });
-            dispatch({ type: 'socket', payload: socket });
-        }
-        let socket;
-        if (!state.socketConfigured) socket = socketClient(uiEndpoint);
-        if (socket) {
-            setListeners(socket);
-        } else setListeners();
+            }
+        );
+        socket.on('room creation', ({ chat, state }: { chat: Chat, state: any }) => {
+            const chatExists = state.userChats.find((userChat: Chat) => userChat.id == chat.id);
+            if (
+                !chatExists &&
+                chat.competitors[0].name == user.name ||
+                chat.competitors[1].name == user.name
+            ) {
+                const userChats = [...state.userChats];
+                userChats.push(chat);
+                if (user.id == chat.messages[0].owner) dispatch({ type: 'selectedChat', payload: chat.id });
+                dispatch({ type: 'userChats', payload: userChats });
+            }
+        });
     }
     async function sendMessage(e: React.FormEvent) {
         e.preventDefault();
@@ -219,8 +209,8 @@ const Chat: FC<any> = (props) => {
                     competitors
                 }
                 newUserChats.push(newChat);
-                state.socket.emit('room creation', newChat);
-                state.socket.emit('text message', { message: msg, chatID: id });
+                socket.emit('room creation', { chat: newChat, state });
+                socket.emit('text message', { message: msg, chatID: id, state });
                 await fetchData(`
                     mutation createRoom(
                         $competitors: [CompetitorsInput!]!,
@@ -242,7 +232,7 @@ const Chat: FC<any> = (props) => {
             }
         }
         if (!msgSent) {
-            state.socket.emit('text message', { message: msg, chatID: id });
+            socket.emit('text message', { message: msg, chatID: id, state });
             const query = `
                 mutation saveMessage($message: MessageInput!, $chat: Int!) {
                     saveMessage(message: $message, chat: $chat)
@@ -382,6 +372,7 @@ const Chat: FC<any> = (props) => {
         } else if (state.searchUsers.length != 0) {
             chats = state.searchUsers.map((searchedUser: User, i: number) => {
                 const key = `${searchedUser.id} ${i} ${searchedUser.email}`;
+                console.log(searchedUser);
                 return (
                     // <UserChat
                     //     keyProp={`${user.id}_${i}`}
