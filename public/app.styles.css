@@ -253,17 +253,15 @@ body {
 .chat .chatBody .msg .wrap {
     width: auto;
     padding: .43vw 3.5vw .43vw 1vw;
-    /* padding: .5vw 1vw; */
-    border-radius: 1.3vw 1.3vw 0vw 1.3vw;
+    border-radius: 15px 15px 0vw;
 }
 
 .chat .chatBody .msg:not(.chat .chatBody .my-msg) {
-    /* justify-content: ; */
     display: flex;
 }
 
 .chat .chatBody .msg:not(.chat .chatBody .my-msg) .wrap {
-    border-radius: 1.3vw 1.3vw 1.3vw 0;
+    border-radius: 15px 15px 15px 0;
 }
 
 .chat .chatBody .my-msg {
@@ -287,7 +285,7 @@ body {
     position: absolute;
     right: 7px;
     bottom: 2px;
-    font-size: 12px;
+    font-size: 11px;
     color: #b8b8b8;
 }
 

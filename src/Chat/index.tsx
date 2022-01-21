@@ -268,7 +268,9 @@ const Chat: FC<any> = (props) => {
             ));
             if (certainUser) {
                 user.id = certainUser.id;
-            }
+                user.chatId = certainUser.id;
+            } else
+                user.chatId = null;
         });
         dispatch({ type: 'searchUsers', payload: searchUsers });
     }
@@ -370,24 +372,18 @@ const Chat: FC<any> = (props) => {
                 )
             });
         } else if (state.searchUsers.length != 0) {
-            chats = state.searchUsers.map((searchedUser: User, i: number) => {
+            chats = state.searchUsers.map((searchedUser: any, i: number) => {
                 const key = `${searchedUser.id} ${i} ${searchedUser.email}`;
-                console.log(searchedUser);
                 return (
-                    // <UserChat
-                    //     keyProp={`${user.id}_${i}`}
-                    //     clickHandler={() => {
-                        
-                    //     }}
-                    //     chat={chat}
-                    // />
                     <div
                         className="chat"
                         key={key}
                         onClick={() => {
-                            const chatExists = state.userChats.find((chat: Chat) => chat.id == searchedUser.id);
-                            dispatch({ type: 'selectedChat', payload: chatExists ? searchedUser.id : false });
+                            const chatExists = state.userChats.find((chat: Chat) => chat.id == searchedUser.chatId);
+                            dispatch({ type: 'selectedChat', payload: chatExists ? searchedUser.chatId : false });
                             dispatch({ type: 'choosenUser', payload: searchedUser });
+                            const main = document.getElementById('main') as HTMLDivElement;
+                            if (main) main.classList.add('active');
                         }}
                     >
                         <div className="chat-info">
