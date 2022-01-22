@@ -9,6 +9,7 @@
 :root {
     --base-font-size: 1.25vw;
     --base-color: #fff;
+    --base-bg: #333;
     height: 100%;
     scroll-behavior: smooth;
     font-size: 16px;
@@ -16,7 +17,7 @@
 
 body {
     font-size: calc(var(--base-font-size) + .2em);
-    background-color: #333;
+    background-color: var(--base-bg);
     color: var(--base-color);
     font-family: Roboto, sans-serif;
     font-weight: 400;
@@ -306,12 +307,77 @@ body {
     margin-left: var(--padding);
 }
 
+.auth-forms {
+    display: flex;
+}
+
+.auth-forms .auth {
+    padding: 15px;
+}
+
+.auth-forms .auth .auth-form {
+    margin-top: 15px;
+}
+
+.auth-forms .auth .auth-form .submit-button {
+    background-color: #1E75FF;
+    border: none;
+    color: inherit;
+    padding: 10px 15px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.auth-forms .auth .auth-form .submit-button:hover {
+    background-color: #1e74ffbb;
+}
+
+.auth-forms .field-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    --field-padding: 10px;
+}
+
+.auth-forms .field-wrap + .field-wrap {
+    margin-top: calc(var(--field-padding));
+}
+
+.auth-forms .field-wrap .field {
+    background: transparent;
+    outline: none;
+    border: 1px solid #1E75FF;
+    color: #fff;
+    padding: var(--field-padding);
+}
+
+.auth-forms .field-wrap .field:valid + .label-field,
+.auth-forms .field-wrap .field:focus + .label-field {
+    transform: translateX(-5px) translateY(-20px);
+}
+
+.auth-forms .field-wrap .label-field {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
+    left: var(--field-padding);
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    transition: 300ms;
+    transform: translateX(0) translateY(0);
+    padding: 0 5px;
+}
+
 .auth-forms .signup input {
     color: #1C1C24;
 }
 
-.auth-forms {
-    display: flex;
+@media (max-width: 850px) {
+    body {
+        font-size: calc(var(--base-font-size) + .4);
+    }
 }
 
 @media (min-width: 700px) {
@@ -345,6 +411,18 @@ body {
         transform: translateX(-100%);
         opacity: 1;
         transition: 300ms;
+    }
+}
+
+@media (max-width: 510px) {
+    .auth-forms {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: calc(var(--base-font-size) + .8em);
     }
 }
 

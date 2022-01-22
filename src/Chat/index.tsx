@@ -133,9 +133,7 @@ const Chat: FC<any> = (props) => {
                 message: Message
             }) => {
                 setUserChats((userChats) => {
-                    console.log(chat);
                     const correctUser = chat.competitors.find(competitor => competitor.id == user.id);
-                    console.log('userChats before:', userChats);
                     if (correctUser) {
                         userChats.find(userChat => {
                             if (userChat.id == chat.id) {
@@ -147,7 +145,6 @@ const Chat: FC<any> = (props) => {
                         const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
                         chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
                     }
-                    console.log(userChats);
                     return [ ...userChats ];
                 });
                 // const userChatsCopy: Array<Chat> = [...userChats];
@@ -158,7 +155,6 @@ const Chat: FC<any> = (props) => {
             }
         );
         socket.on('room creation', (chat: Chat) => {
-            console.log(chat);
             const chatExists = userChats.find((userChat: Chat) => userChat.id == chat.id);
             if (
                 !chatExists &&
@@ -234,7 +230,6 @@ const Chat: FC<any> = (props) => {
         }
         if (!msgSent) {
             const chat: any = userChats.find(userChat => userChat.id == id);
-            console.log(chat);
             socket.emit('text message', { message: msg, chat });
             const query = `
                 mutation saveMessage($message: MessageInput!, $chat: Int!) {

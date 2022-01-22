@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import { withRouter } from 'react-router';
 import fetchData from '../fetchData';
+import InputField from './InputField';
 
 interface ValueString {
     value: string;
@@ -56,32 +57,31 @@ const Signup: FC<any> = (props) => {
     }
 
     return (
-        <div className="sign-up-wrap">
+        <div className="sign-up-wrap auth">
             <h2>Sign up:</h2>
             <form
-                className="signup"
+                className="signup auth-form"
                 name="signup"
                 onSubmit={signUp}
             >
-                <label className="error-message"></label>
-                <div className="field-wrap">
-                    <input type="text" name="name" className="field" />
-                    <label>Username:</label>
-                </div>
-                <div className="field-wrap">
-                    <input type="text" name="email" className="field" />
-                    <label>Email:</label>
-                </div>
-                <div className="field-wrap">
-                    <input type="text" name="password" className="field" />
-                    <label>Password:</label>
-                </div>
-                <div className="field-wrap">
-                    <input type="text" name="repeatedPassword" className="field" />
-                    <label>Repeat the password:</label>
-                </div>
+                <InputField
+                    inputName="name"
+                    label="Username"
+                />
+                <InputField
+                    inputName="email"
+                    label="Email"
+                />
+                <InputField
+                    inputName="password"
+                    label="Password"
+                />
+                <InputField
+                    inputName="repeatedPassword"
+                    label="Repeat the password"
+                />
                 <button
-                    className="sign-up"
+                    className="sign-up submit-button"
                     type="submit"
                 >
                     Sign up

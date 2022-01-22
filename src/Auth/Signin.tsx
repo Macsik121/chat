@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import { withRouter } from 'react-router';
 import fetchData from '../fetchData';
+import InputField from './InputField';
 
 const Signin: FC<any> = (props) => {
     const signIn: (e: React.SyntheticEvent) => void = async (e) => {
@@ -41,21 +42,21 @@ const Signin: FC<any> = (props) => {
     }
 
     return (
-        <div className="sign-in-wrap">
+        <div className="sign-in-wrap auth">
             <h2>Sign in:</h2>
             <form
-                className="signin"
+                className="signin auth-form"
                 onSubmit={signIn}
             >
-                <div className="field-wrap">
-                    <input type="text" name="name" className="field" />
-                    <label>Username or email:</label>
-                </div>
-                <div className="field-wrap">
-                    <input type="text" name="password" className="field" />
-                    <label>Your password:</label>
-                </div>
-                <button className="sign-in" type="submit">Sign in</button>
+                <InputField
+                    inputName="name"
+                    label="Username or email"
+                />
+                <InputField
+                    inputName="password"
+                    label="Your password"
+                />
+                <button className="sign-in submit-button" type="submit">Sign in</button>
             </form>
         </div>
     )
