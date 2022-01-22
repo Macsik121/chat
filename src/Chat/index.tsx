@@ -364,7 +364,11 @@ const Chat: FC<any> = (props) => {
                             dispatch({ type: 'selectedChat', payload: chatExists ? searchedUser.chatId : false });
                             dispatch({ type: 'choosenUser', payload: searchedUser });
                             const main = document.getElementById('main') as HTMLDivElement;
+                            const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
                             if (main) main.classList.add('active');
+                            if (chatBody &&
+                                state.selectedChat == searchedUser.chatId
+                            ) chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' })
                         }}
                     >
                         <div className="chat-info">
