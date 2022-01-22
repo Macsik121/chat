@@ -30,7 +30,7 @@ interface ChatState {
     socketConfigured: boolean
 }
 
-type Reducer = (state: ChatState, action: any) => any;
+type Reducer = (state: any, action: any) => any;
 
 const reducer: Reducer = function(state: any, action) {
     if (state[action.type] == undefined) {
@@ -47,7 +47,6 @@ const initState = {
     searchUsers: [],
     requestMaking: false,
     isMounted: false,
-    socket: {},
     userChats: [],
     selectedChat: 0,
     socketConfigured: false,
@@ -58,6 +57,7 @@ const initState = {
 
 const Chat: FC<any> = (props) => {
     const [state, dispatch] = useReducer(reducer, initState);
+    const [userChats, setUserChats] = useState<Array<Chat>>([]);
     let user: User = {
         name: '',
         email: '',
@@ -105,7 +105,8 @@ const Chat: FC<any> = (props) => {
                 id: user.id
             })
             dispatch({ type: 'isMounted', payload: true });
-            dispatch({ type: 'userChats', payload: chats });
+            setUserChats(chats);
+            // dispatch({ type: 'userChats', payload: chats });
         })();
         return () => {
             socket.removeAllListeners();
@@ -125,47 +126,48 @@ const Chat: FC<any> = (props) => {
     function configureSocket() {
         socket.on('text message',
             ({
-                chatID,
-                message,
-                state,
-                socketId
+                chat,
+                message
             }: {
-                chatID: number;
-                message: {
-                    text: string;
-                    owner: number;
-                },
-                socketId: string,
-                state: any
+                chat: Chat;
+                message: Message
             }) => {
-                const userChats = [...state.userChats];
-                const certainChat = userChats.find((chat: Chat) => chat.id == chatID);
-                if (certainChat && socketId == socket.id) {
-                    const msg: Message = {
-                        text: message.text,
-                        owner: message.owner,
-                        date: new Date()
-                    };
-                    certainChat.messages.push(msg);
-                    dispatch({ type: 'userChats', payload: userChats });
-                    const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
-                    chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
-                }
+                setUserChats((userChats) => {
+                    console.log(chat);
+                    const correctUser = chat.competitors.find(competitor => competitor.id == user.id);
+                    console.log('userChats before:', userChats);
+                    if (correctUser) {
+                        userChats.find(userChat => {
+                            if (userChat.id == chat.id) {
+                                if (!message.date) message.date = new Date();
+                                userChat.messages.push(message);
+                                return;
+                            }
+                        });
+                        const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
+                        chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                    }
+                    console.log(userChats);
+                    return [ ...userChats ];
+                });
+                // const userChatsCopy: Array<Chat> = [...userChats];
+                // const certainChat = userChatsCopy.find(chat => chat.id == chatID);
+                // if (certainChat) {
+                    // dispatch({ type: 'userChats', payload: userChats });
+                // }
             }
         );
-        socket.on('room creation', ({ chat, state }: { chat: Chat, state: any }) => {
-            const chatExists = state.userChats.find((userChat: Chat) => userChat.id == chat.id);
+        socket.on('room creation', (chat: Chat) => {
+            console.log(chat);
+            const chatExists = userChats.find((userChat: Chat) => userChat.id == chat.id);
             if (
                 !chatExists &&
                 chat.competitors[0].name == user.name ||
                 chat.competitors[1].name == user.name
             ) {
-                const userChats = [...state.userChats];
-                console.log(userChats);
-                userChats.push(chat);
-                console.log(userChats);
                 if (user.id == chat.messages[0].owner) dispatch({ type: 'selectedChat', payload: chat.id });
-                dispatch({ type: 'userChats', payload: userChats });
+                // dispatch({ type: 'userChats', payload: userChats });
+                setUserChats((userChats) => [ ...userChats, chat ]);
             }
         });
     }
@@ -203,16 +205,13 @@ const Chat: FC<any> = (props) => {
                         chatId
                     }
                 `);
-                const newUserChats = state.userChats.slice();
                 id = chatId;
                 const newChat: Chat = {
                     id,
                     messages: [ msg ],
                     competitors
                 }
-                newUserChats.push(newChat);
-                socket.emit('room creation', { chat: newChat, state });
-                socket.emit('text message', { message: msg, chatID: id, state,  });
+                socket.emit('room creation', newChat);
                 await fetchData(`
                     mutation createRoom(
                         $competitors: [CompetitorsInput!]!,
@@ -234,7 +233,9 @@ const Chat: FC<any> = (props) => {
             }
         }
         if (!msgSent) {
-            socket.emit('text message', { message: msg, chatID: id, state });
+            const chat: any = userChats.find(userChat => userChat.id == id);
+            console.log(chat);
+            socket.emit('text message', { message: msg, chat });
             const query = `
                 mutation saveMessage($message: MessageInput!, $chat: Int!) {
                     saveMessage(message: $message, chat: $chat)
@@ -264,7 +265,7 @@ const Chat: FC<any> = (props) => {
         }
         let { searchUsers } = await fetchData(query, vars);
         searchUsers.forEach((user: any, i: number) => {
-            const certainUser: Chat = state.userChats.find((chatUser: Chat) => (
+            const certainUser: any = userChats.find((chatUser: Chat) => (
                 chatUser.competitors[0].name == user.name ||
                 chatUser.competitors[1].name == user.name
             ));
@@ -283,7 +284,7 @@ const Chat: FC<any> = (props) => {
 
     let messages: Array<JSX.Element> = [ <div></div> ];
     if (state.selectedChat) {
-        const certainChat: Chat = state.userChats.find((chat: Chat) => chat.id == state.selectedChat);
+        const certainChat: any = userChats.find((chat: Chat) => chat.id == state.selectedChat);
         if (certainChat && certainChat.messages) {
             messages = certainChat.messages.map((message: Message, i: number) => {
                 const key = message.text + message.owner + i + certainChat.id;
@@ -331,11 +332,11 @@ const Chat: FC<any> = (props) => {
         </div>
     ];
     if (
-        state.userChats.length != 0 ||
+        userChats.length != 0 ||
         state.searchUsers.length != 0
     ) {
-        if (state.searchUsers.length == 0 && state.userChats.length != 0) {
-            chats = state.userChats.map((chat: Chat, i: number) => {
+        if (state.searchUsers.length == 0 && userChats.length != 0) {
+            chats = userChats.map((chat: Chat, i: number) => {
                 const key = `${chat.id} ${i} ${chat.messages[0] ? chat.messages[0].text + chat.messages[0].owner : ''}`;
                 return (
                     <div
@@ -381,7 +382,7 @@ const Chat: FC<any> = (props) => {
                         className="chat"
                         key={key}
                         onClick={() => {
-                            const chatExists = state.userChats.find((chat: Chat) => chat.id == searchedUser.chatId);
+                            const chatExists = userChats.find((chat: Chat) => chat.id == searchedUser.chatId);
                             dispatch({ type: 'selectedChat', payload: chatExists ? searchedUser.chatId : false });
                             dispatch({ type: 'choosenUser', payload: searchedUser });
                             const main = document.getElementById('main') as HTMLDivElement;
