@@ -168,13 +168,19 @@ const Chat: FC<any> = (props) => {
             let online = update;
             setUserChats(userChats => {
                 userChats.find(userChat => {
+                    console.log(userChat.competitors, name, user.name)
                     if (
                         !userChat.title &&
-                        (userChat.competitors[0].name == name &&
-                        userChat.competitors[0].name !== user.name) ||
-                        (userChat.competitors[1].name == name &&
-                        userChat.competitors[1].name !== user.name)
+                        (
+                            userChat.competitors[0].name == name &&
+                            userChat.competitors[0].name !== user.name
+                        ) ||
+                        (
+                            userChat.competitors[1].name == name &&
+                            userChat.competitors[1].name !== user.name
+                        )
                     ) {
+                        console.log('userChat:', userChat);
                         console.log('userChat is logged since userChat.competitors[0].name matches the given name:', userChat.competitors[0])
                         userChat.competitors[0].lastSeen = new Date();
                         id = userChat.competitors[0].id;
