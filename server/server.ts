@@ -42,7 +42,7 @@ io.on('connection', (socket) => {
     });
     socket.on('disconnect', () => {
         console.log('a user has been disconnected');
-        io.emit('connection', {
+        socket.emit('connection', {
             socketId: null
         });
     });

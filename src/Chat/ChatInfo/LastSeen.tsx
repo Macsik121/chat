@@ -7,7 +7,6 @@ const LastSeen: FC<{
     lastSeen,
     online
 }) => {
-    console.log(lastSeen, online);
     return (
         <div className="last-seen">
             {online
