@@ -170,10 +170,12 @@ const Chat: FC<any> = (props) => {
                 userChats.find(userChat => {
                     if (!userChat.title) {
                         if (userChat.competitors[0].name == name) {
+                            console.log('userChat is logged since userChat.competitors[0].name matches the given name:', userChat.competitors[0])
                             userChat.competitors[0].lastSeen = new Date();
                             id = userChat.competitors[0].id;
                             userChat.competitors[0].online = online;
                         } else if (userChat.competitors[1].name == name) {
+                            console.log('userChat is logged since userChat.competitors[0].name matches the given name:', userChat.competitors[0])
                             userChat.competitors[1].lastSeen = new Date();
                             userChat.competitors[1].online = online;
                         }
@@ -357,7 +359,6 @@ const Chat: FC<any> = (props) => {
                         ? chat.competitors[1]
                         : chat.competitors[0]
                 );
-                console.log(chat.competitors);
                 const { name, lastSeen, online } = competitor;
                 return (
                     <div

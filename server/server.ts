@@ -40,12 +40,11 @@ io.on('connection', (socket) => {
             update
         });
     });
-});
-
-io.on('disconnect', () => {
-    console.log('a user has been disconnected')
-    io.emit('connection', {
-        socketId: null
+    socket.on('disconnect', () => {
+        console.log('a user has been disconnected');
+        io.emit('connection', {
+            socketId: null
+        });
     });
 });
 
