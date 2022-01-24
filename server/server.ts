@@ -21,6 +21,7 @@ const port: number = Number(env.PORT) || 8000;
 app.use('/', express.static('public'));
 
 io.on('connection', (socket) => {
+    console.log('a user has been connected')
     io.emit('connection', {
         socketId: socket.id
     });
@@ -42,6 +43,7 @@ io.on('connection', (socket) => {
 });
 
 io.on('disconnect', () => {
+    console.log('a user has been disconnected')
     io.emit('connection', {
         socketId: null
     });

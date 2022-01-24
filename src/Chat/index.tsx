@@ -163,9 +163,9 @@ const Chat: FC<any> = (props) => {
             }
         });
         socket.on('last seen update', async ({ name, update }: { name: string; update: boolean; }) => {
-            let id: boolean | number = false;
+            console.log('last seen update is triggered');
+            let id: number = user.id;
             let online = update;
-            
             setUserChats(userChats => {
                 userChats.find(userChat => {
                     if (!userChat.title) {
@@ -181,9 +181,7 @@ const Chat: FC<any> = (props) => {
                 });
                 return [ ...userChats ];
             });
-            if (id) {
-                await updateLastSeen(id, online);
-            }
+            await updateLastSeen(id, online);
         });
     }
     async function sendMessage(e: React.FormEvent) {
