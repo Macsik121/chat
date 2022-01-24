@@ -15,6 +15,7 @@ import ChatInfo from './ChatInfo';
 import UserChat from './Chat';
 import { User, Chat, Message, Competitor } from '../interfaces';
 import globals from '../globals';
+import updateLastSeen from '../fetchData/updateLastSeen';
 
 const uiEndpoint = globals.__UI_SERVER_ENDPOINT__;
 
@@ -60,7 +61,9 @@ const Chat: FC<any> = (props) => {
         name: '',
         email: '',
         id: 0,
-        chats: []
+        chats: [],
+        lastSeen: new Date(),
+        online: false
     };
     function closeChat() {
         if (window.screen.width > 700) {
@@ -91,6 +94,8 @@ const Chat: FC<any> = (props) => {
                         competitors {
                             id
                             name
+                            lastSeen
+                            online
                         }
                         messages {
                             text
@@ -115,6 +120,12 @@ const Chat: FC<any> = (props) => {
         }
     }
     function configureSocket() {
+        socket.on('connection', ({ socketId }: { socketId: string; }) => {
+            socket.emit('last seen update', {
+                name: user.name,
+                update: socketId ? true : false
+            });
+        });
         socket.on('text message',
             ({
                 chat,
@@ -123,7 +134,7 @@ const Chat: FC<any> = (props) => {
                 chat: Chat;
                 message: Message
             }) => {
-                setUserChats((userChats) => {
+                setUserChats(userChats => {
                     const correctUser = chat.competitors.find(competitor => competitor.id == user.id);
                     if (correctUser) {
                         userChats.find(userChat => {
@@ -148,7 +159,30 @@ const Chat: FC<any> = (props) => {
                 chat.competitors[1].name == user.name
             ) {
                 if (user.id == chat.messages[0].owner) dispatch({ type: 'selectedChat', payload: chat.id });
-                setUserChats((userChats) => [ ...userChats, chat ]);
+                setUserChats(userChats => [ ...userChats, chat ]);
+            }
+        });
+        socket.on('last seen update', async ({ name, update }: { name: string; update: boolean; }) => {
+            let id: boolean | number = false;
+            let online = update;
+            
+            setUserChats(userChats => {
+                userChats.find(userChat => {
+                    if (!userChat.title) {
+                        if (userChat.competitors[0].name == name) {
+                            userChat.competitors[0].lastSeen = new Date();
+                            id = userChat.competitors[0].id;
+                            userChat.competitors[0].online = online;
+                        } else if (userChat.competitors[1].name == name) {
+                            userChat.competitors[1].lastSeen = new Date();
+                            userChat.competitors[1].online = online;
+                        }
+                    }
+                });
+                return [ ...userChats ];
+            });
+            if (id) {
+                await updateLastSeen(id, online);
             }
         });
     }
@@ -236,6 +270,8 @@ const Chat: FC<any> = (props) => {
                     id
                     name
                     email
+                    lastSeen
+                    online
                 }
             }
         `;
@@ -318,22 +354,29 @@ const Chat: FC<any> = (props) => {
         if (state.searchUsers.length == 0 && userChats.length != 0) {
             chats = userChats.map((chat: Chat, i: number) => {
                 const key = `${chat.id} ${i} ${chat.messages[0] ? chat.messages[0].text + chat.messages[0].owner : ''}`;
+                const competitor = (
+                    chat.competitors[0].name == user.name
+                        ? chat.competitors[1]
+                        : chat.competitors[0]
+                );
+                console.log(chat.competitors);
+                const { name, lastSeen, online } = competitor;
                 return (
                     <div
                         className="chat"
                         key={key}
                         onClick={() => {
+                            const choosenUser = {
+                                name: (
+                                    chat.title || competitor.name
+                                ),
+                                lastSeen,
+                                online
+                            };
                             dispatch({ type: 'selectedChat', payload: chat.id });
                             dispatch({
                                 type: 'choosenUser',
-                                payload: {
-                                    name: (
-                                        chat.title ||
-                                        chat.competitors[0].name == user.name
-                                            ? chat.competitors[1].name
-                                            : chat.competitors[0].name
-                                    )
-                                }
+                                payload: choosenUser
                             });
                             const main = document.getElementById('main') as HTMLDivElement;
                             const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
@@ -361,13 +404,15 @@ const Chat: FC<any> = (props) => {
                         key={key}
                         onClick={() => {
                             const chatExists = userChats.find((chat: Chat) => chat.id == searchedUser.chatId);
-                            dispatch({ type: 'selectedChat', payload: chatExists ? searchedUser.chatId : false });
+                            const selectedChat = chatExists ? searchedUser.chatId : false;
+                            dispatch({ type: 'selectedChat', payload: selectedChat });
                             dispatch({ type: 'choosenUser', payload: searchedUser });
                             const main = document.getElementById('main') as HTMLDivElement;
                             const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
                             if (main) main.classList.add('active');
-                            if (chatBody &&
-                                state.selectedChat == searchedUser.chatId
+                            if (
+                                chatBody &&
+                                selectedChat == searchedUser.chatId
                             ) chatBody.scrollIntoView({ block: 'end', behavior: 'smooth' })
                         }}
                     >
@@ -400,7 +445,7 @@ const Chat: FC<any> = (props) => {
             <SidebarChats />
             <main id="main" className="main">
                 <ChatInfo
-                    name={state.choosenUser.name}
+                    user={state.choosenUser}
                     close={closeChat}
                 />
                 <div className="chatting">

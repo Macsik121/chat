@@ -405,15 +405,18 @@ body {
     }
     .chat .main {
         min-width: 100vw;
-        transform: translateX(100%);
+        transform: translateX(-100%);
         z-index: 2;
         background-color: #1C1C24;
         opacity: 0;
         transition: 400ms;
         height: 100vh;
+        position: absolute;
+        top: 0;
+        left: 0;
     }
     .chat .main.active {
-        transform: translateX(-100%);
+        transform: translateX(0);
         opacity: 1;
         transition: 300ms;
     }

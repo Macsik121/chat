@@ -4,6 +4,8 @@ export interface User {
     email: string;
     password?: string;
     chats?: Array<Chat>
+    lastSeen: Date;
+    online: boolean;
 }
 
 export type VoidFunction = () => void
@@ -18,6 +20,8 @@ export interface Chat {
 export interface Competitor {
     id: number;
     name: string;
+    lastSeen?: Date;
+    online?: boolean;
 }
 
 export interface Message {

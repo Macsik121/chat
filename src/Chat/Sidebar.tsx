@@ -16,7 +16,9 @@ const SidebarChats: FC<any> = (props) => {
         email: '',
         password: '',
         chats: [],
-        id: 0
+        id: 0,
+        lastSeen: new Date(),
+        online: false
     };
     if (localStorage.getItem('token')) {
         user = jwtDecode(localStorage.getItem('token') || '');
