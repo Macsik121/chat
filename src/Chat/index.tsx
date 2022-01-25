@@ -198,6 +198,7 @@ const Chat: FC<any> = (props) => {
                 });
                 return [ ...userChats ];
             });
+            console.log('id, online:', id + ', ' + online);
             await updateLastSeen(id, online);
         });
     }
@@ -374,7 +375,6 @@ const Chat: FC<any> = (props) => {
                         ? chat.competitors[1]
                         : chat.competitors[0]
                 );
-
                 const { name, lastSeen, online } = competitor;
                 return (
                     <div
@@ -383,7 +383,7 @@ const Chat: FC<any> = (props) => {
                         onClick={() => {
                             const choosenUser = {
                                 name: (
-                                    chat.title || competitor.name
+                                    chat.title || name
                                 ),
                                 lastSeen,
                                 online
