@@ -167,6 +167,7 @@ const Chat: FC<any> = (props) => {
             let id: number = user.id;
             let online = update;
             setUserChats(userChats => {
+                console.log('userChats:', userChats);
                 userChats.find(userChat => {
                     console.log(userChat.competitors, name, user.name)
                     const condition = (
@@ -196,6 +197,7 @@ const Chat: FC<any> = (props) => {
                         }
                     }
                 });
+                console.log(userChats);
                 return [ ...userChats ];
             });
             console.log('id, online:', id + ', ' + online);
