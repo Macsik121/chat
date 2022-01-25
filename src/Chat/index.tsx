@@ -184,15 +184,15 @@ const Chat: FC<any> = (props) => {
                     ) {
                         console.log('userChat:', userChat);
                         if (condition) {
-                            console.log('userChat.competitors[0]:', userChat.competitors[0])
                             userChat.competitors[0].lastSeen = new Date();
                             id = userChat.competitors[0].id;
                             userChat.competitors[0].online = online;
+                            console.log('userChat.competitors[0]:', userChat.competitors[0])
                         } else if (condition2) {
-                            console.log('userChat.competitors[1]:', userChat.competitors[1])
                             userChat.competitors[1].lastSeen = new Date();
                             id = userChat.competitors[1].id;
                             userChat.competitors[1].online = online;
+                            console.log('userChat.competitors[1]:', userChat.competitors[1])
                         }
                     }
                 });
@@ -374,6 +374,7 @@ const Chat: FC<any> = (props) => {
                         ? chat.competitors[1]
                         : chat.competitors[0]
                 );
+
                 const { name, lastSeen, online } = competitor;
                 return (
                     <div
