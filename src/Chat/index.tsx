@@ -183,12 +183,13 @@ const Chat: FC<any> = (props) => {
                         condition2
                     ) {
                         console.log('userChat:', userChat);
-                        console.log('userChat is logged since userChat.competitors[0].name matches the given name:', userChat.competitors[0])
                         if (condition) {
+                            console.log('userChat.competitors[0]:', userChat.competitors[0])
                             userChat.competitors[0].lastSeen = new Date();
                             id = userChat.competitors[0].id;
                             userChat.competitors[0].online = online;
                         } else if (condition2) {
+                            console.log('userChat.competitors[1]:', userChat.competitors[1])
                             userChat.competitors[1].lastSeen = new Date();
                             id = userChat.competitors[1].id;
                             userChat.competitors[1].online = online;
