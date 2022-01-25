@@ -169,22 +169,30 @@ const Chat: FC<any> = (props) => {
             setUserChats(userChats => {
                 userChats.find(userChat => {
                     console.log(userChat.competitors, name, user.name)
+                    const condition = (
+                        userChat.competitors[0].name == name &&
+                        userChat.competitors[0].name !== user.name
+                    );
+                    const condition2 = (
+                        userChat.competitors[1].name == name &&
+                        userChat.competitors[1].name !== user.name
+                    );
                     if (
                         !userChat.title &&
-                        (
-                            userChat.competitors[0].name == name &&
-                            userChat.competitors[0].name !== user.name
-                        ) ||
-                        (
-                            userChat.competitors[1].name == name &&
-                            userChat.competitors[1].name !== user.name
-                        )
+                        condition ||
+                        condition2
                     ) {
                         console.log('userChat:', userChat);
                         console.log('userChat is logged since userChat.competitors[0].name matches the given name:', userChat.competitors[0])
-                        userChat.competitors[0].lastSeen = new Date();
-                        id = userChat.competitors[0].id;
-                        userChat.competitors[0].online = online;
+                        if (condition) {
+                            userChat.competitors[0].lastSeen = new Date();
+                            id = userChat.competitors[0].id;
+                            userChat.competitors[0].online = online;
+                        } else if (condition2) {
+                            userChat.competitors[1].lastSeen = new Date();
+                            id = userChat.competitors[1].id;
+                            userChat.competitors[1].online = online;
+                        }
                     }
                 });
                 return [ ...userChats ];
