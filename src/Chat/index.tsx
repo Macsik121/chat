@@ -163,9 +163,7 @@ const Chat: FC<any> = (props) => {
         socket.on('last seen update', async ({ name, online }: { name: string; online: boolean; }) => {
             let { id } = user;
             setUserChats(userChats => {
-                console.log('userChats:', userChats);
                 userChats.find(userChat => {
-                    console.log(userChat.competitors, name, user.name)
                     const condition = (
                         userChat.competitors[0].name == name &&
                         userChat.competitors[0].name !== user.name
@@ -179,25 +177,20 @@ const Chat: FC<any> = (props) => {
                         (condition ||
                         condition2)
                     ) {
-                        console.log('userChat:', userChat);
                         if (condition) {
                             userChat.competitors[0].lastSeen = new Date();
                             id = userChat.competitors[0].id;
                             userChat.competitors[0].online = online;
-                            console.log('userChat.competitors[0]:', userChat.competitors[0])
                         } else if (condition2) {
                             userChat.competitors[1].lastSeen = new Date();
                             id = userChat.competitors[1].id;
                             userChat.competitors[1].online = online;
-                            console.log('userChat.competitors[1]:', userChat.competitors[1])
                         }
                     }
                 });
-                console.log(userChats);
                 dispatch({ type: 'choosenUser', payload: { ...state.choosenUser, online } });
                 return [ ...userChats ];
             });
-            console.log('id, online:', id + ', ' + online);
         });
     }
     async function sendMessage(e: React.FormEvent) {
@@ -438,6 +431,7 @@ const Chat: FC<any> = (props) => {
             });
         }
     }
+    console.log(state.choosenUser);
 
     return (
         <div
