@@ -176,8 +176,8 @@ const Chat: FC<any> = (props) => {
                     );
                     if (
                         !userChat.title &&
-                        condition ||
-                        condition2
+                        (condition ||
+                        condition2)
                     ) {
                         console.log('userChat:', userChat);
                         if (condition) {
@@ -194,6 +194,7 @@ const Chat: FC<any> = (props) => {
                     }
                 });
                 console.log(userChats);
+                dispatch({ type: 'choosenUser', payload: { ...state.choosenUser, online } });
                 return [ ...userChats ];
             });
             console.log('id, online:', id + ', ' + online);
@@ -365,6 +366,7 @@ const Chat: FC<any> = (props) => {
         state.searchUsers.length != 0
     ) {
         if (state.searchUsers.length == 0 && userChats.length != 0) {
+            console.log('userChats from rendering:', userChats);
             chats = userChats.map((chat: Chat, i: number) => {
                 const key = `${chat.id} ${i} ${chat.messages[0] ? chat.messages[0].text + chat.messages[0].owner : ''}`;
                 const competitor = (
