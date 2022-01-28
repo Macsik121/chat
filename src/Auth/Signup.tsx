@@ -35,7 +35,7 @@ const Signup: FC<any> = (props) => {
                     message
                     success
                     payload {
-
+                        id
                     }
                 }
             }

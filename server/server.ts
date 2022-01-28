@@ -88,7 +88,6 @@ io.on('connection', (socket) => {
         id
     }: LastSeenUpdate) => {
         if (!online)
-            // socketemit('disconnect');
             io.sockets.emit('disconnect');
         else
             io.sockets.emit('user connection', {
