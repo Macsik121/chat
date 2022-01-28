@@ -1,10 +1,10 @@
 import { ArrowBack } from '@material-ui/icons';
 import React, { FC } from 'react';
 import LastSeen from './LastSeen';
-import { User } from '../../interfaces';
+import { ChoosenUser } from '../../interfaces';
 
 const ChatInfo: FC<{
-    user: User;
+    user: ChoosenUser;
     close: () => void;
 }> = ({
     user,

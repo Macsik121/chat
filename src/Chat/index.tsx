@@ -13,23 +13,13 @@ import SidebarChats from './Sidebar';
 import Search from './Search';
 import ChatInfo from './ChatInfo';
 import UserChat from './Chat';
-import { User, Chat, Message, Competitor } from '../interfaces';
+import { User, Chat, Message, ChoosenUser } from '../interfaces';
 import globals from '../globals';
 import updateLastSeen from '../fetchData/updateLastSeen';
 
 const uiEndpoint = globals.__UI_SERVER_ENDPOINT__;
 
 const socket = socketClient(uiEndpoint);
-
-interface ChatState {
-    requestMaking: boolean
-    isMounted: boolean
-    socket: any
-    userChats: Array<Chat>
-    selectedChat: number
-    searchUsers: Array<User>
-    socketConfigured: boolean
-}
 
 type Reducer = (state: any, action: any) => any;
 
@@ -50,13 +40,17 @@ const initState = {
     isMounted: false,
     userChats: [],
     selectedChat: 0,
-    socketConfigured: false,
-    choosenUser: {}
+    socketConfigured: false
 };
 
 const Chat: FC<any> = (props) => {
     const [state, dispatch] = useReducer(reducer, initState);
     const [userChats, setUserChats] = useState<Array<Chat>>([]);
+    const [choosenUser, setChoosenUser] = useState<ChoosenUser>({
+        id: 0,
+        name: '',
+        online: false
+    });
     let user: User = {
         name: '',
         email: '',
@@ -68,7 +62,13 @@ const Chat: FC<any> = (props) => {
     function closeChat() {
         if (window.screen.width > 700) {
             dispatch({ type: 'selectedChat', payload: 0 });
-            dispatch({ type: 'choosenUser', payload: {} });
+            setChoosenUser(() => {
+                return {
+                    id: 0,
+                    name: '',
+                    online: false
+                };
+            });
         }
         const main = document.getElementById('main') as HTMLDivElement;
         if (main) main.classList.remove('active');
@@ -188,7 +188,12 @@ const Chat: FC<any> = (props) => {
                         }
                     }
                 });
-                dispatch({ type: 'choosenUser', payload: { ...state.choosenUser, online } });
+                setChoosenUser(choosenUser => {
+                    return {
+                        ...choosenUser,
+                        online
+                    }
+                });
                 return [ ...userChats ];
             });
         });
@@ -209,13 +214,13 @@ const Chat: FC<any> = (props) => {
         let msgSent = false;
         if (state.searchUsers.length != 0) {
             if (
-                JSON.stringify(state.choosenUser) != '{}' &&
+                JSON.stringify(choosenUser) != '{}' &&
                 !state.selectedChat
             ) {
                 const competitors = [
                     {
-                        id: state.choosenUser.id,
-                        name: state.choosenUser.name
+                        id: choosenUser.id,
+                        name: choosenUser.name
                     },
                     {
                         id: user.id,
@@ -359,7 +364,6 @@ const Chat: FC<any> = (props) => {
         state.searchUsers.length != 0
     ) {
         if (state.searchUsers.length == 0 && userChats.length != 0) {
-            console.log('userChats from rendering:', userChats);
             chats = userChats.map((chat: Chat, i: number) => {
                 const key = `${chat.id} ${i} ${chat.messages[0] ? chat.messages[0].text + chat.messages[0].owner : ''}`;
                 const competitor = (
@@ -373,7 +377,8 @@ const Chat: FC<any> = (props) => {
                         className="chat"
                         key={key}
                         onClick={() => {
-                            const choosenUser = {
+                            const choosenUser: ChoosenUser = {
+                                id: 0,
                                 name: (
                                     chat.title || name
                                 ),
@@ -381,10 +386,7 @@ const Chat: FC<any> = (props) => {
                                 online
                             };
                             dispatch({ type: 'selectedChat', payload: chat.id });
-                            dispatch({
-                                type: 'choosenUser',
-                                payload: choosenUser
-                            });
+                            setChoosenUser(() => choosenUser)
                             const main = document.getElementById('main') as HTMLDivElement;
                             const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
                             if (main) main.classList.add('active');
@@ -413,7 +415,7 @@ const Chat: FC<any> = (props) => {
                             const chatExists = userChats.find((chat: Chat) => chat.id == searchedUser.chatId);
                             const selectedChat = chatExists ? searchedUser.chatId : false;
                             dispatch({ type: 'selectedChat', payload: selectedChat });
-                            dispatch({ type: 'choosenUser', payload: searchedUser });
+                            setChoosenUser(() => searchedUser);
                             const main = document.getElementById('main') as HTMLDivElement;
                             const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
                             if (main) main.classList.add('active');
@@ -431,7 +433,6 @@ const Chat: FC<any> = (props) => {
             });
         }
     }
-    console.log(state.choosenUser);
 
     return (
         <div
@@ -453,7 +454,7 @@ const Chat: FC<any> = (props) => {
             <SidebarChats />
             <main id="main" className="main">
                 <ChatInfo
-                    user={state.choosenUser}
+                    user={choosenUser}
                     close={closeChat}
                 />
                 <div className="chatting">

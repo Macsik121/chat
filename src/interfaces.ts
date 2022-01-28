@@ -29,3 +29,10 @@ export interface Message {
     owner: number
     date: Date
 }
+
+export interface ChoosenUser {
+    id: number;
+    name: string;
+    lastSeen?: Date;
+    online?: boolean;
+}
