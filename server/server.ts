@@ -4,6 +4,7 @@ import express from 'express';
 import http from 'http';
 // import https from 'https';
 import { Server } from 'socket.io';
+import socketClient, { connect } from 'socket.io-client';
 // import fs from 'fs';
 // import path from 'path';
 import { Chat, User } from '../src/interfaces';
@@ -32,7 +33,7 @@ interface LastSeenUpdate {
 
 const connectedUsers: Array<ServerUser> = [];
 
-async function updateLastSeenCompletely(io: any, {
+async function updateLastSeenCompletely({
     name,
     online,
     id
@@ -44,6 +45,48 @@ async function updateLastSeenCompletely(io: any, {
     await updateLastSeen(id, online);
 }
 
+async function disconnectUser(socket: any) {
+    console.log('a user has been disconnected');
+    let connectedUser: ServerUser = {
+        id: '',
+        name: '',
+        userId: 0
+    };
+    connectedUsers.find((user, i) => {
+        connectedUser = user;
+        if (user.id == socket.id)
+            connectedUsers.splice(i, 1);
+        return connectedUser.id == socket.id;
+    });
+    if (connectedUser.userId !== 0 && connectedUser.name !== '') {
+        await updateLastSeenCompletely({
+            name: connectedUser.name,
+            online: false,
+            id: connectedUser.userId
+        });
+    }
+}
+
+async function connectUser(socket: any, { name, id }: {
+    name: string;
+    id: number
+}) {
+    const cond = !connectedUsers.some(user => user.name == name);
+    const user: ServerUser = {
+        name,
+        userId: id,
+        id: socket.id
+    };
+    if (cond) {
+        connectedUsers.push(user);
+        await updateLastSeenCompletely({
+            name: user.name,
+            online: true,
+            id: user.userId
+        });
+    }
+}
+
 app.use('/', express.static('public'));
 
 io.on('connection', (socket) => {
@@ -52,25 +95,10 @@ io.on('connection', (socket) => {
     });
     socket.on('user connection', async ({ name, id }: { name: string, id: number }) => {
         console.log('a user has been connected');
-        const cond = !connectedUsers.some(user => user.name == name);
-        const user: ServerUser = {
+        await connectUser(socket, {
             name,
-            userId: id,
-            id: socket.id
-        };
-        if (cond) {
-            connectedUsers.push(user);
-            await updateLastSeenCompletely(io, {
-                name: user.name,
-                online: true,
-                id: user.userId
-            });
-            // io.emit('last seen update', {
-            //     name: user.name,
-            //     online: true
-            // });
-            // await updateLastSeen(user.userId, true);
-        }
+            id
+        });
         console.log('connected users:', connectedUsers);
     });
     socket.on('text message', ({ message, chat }: { message: string, chat: Chat }) => {
@@ -88,38 +116,15 @@ io.on('connection', (socket) => {
         id
     }: LastSeenUpdate) => {
         if (!online)
-            io.sockets.emit('disconnect');
+            await disconnectUser(socket);
         else
-            io.sockets.emit('user connection', {
+            await connectUser(socket, {
                 name,
                 id
             });
     });
     socket.on('disconnect', async () => {
-        console.log('a user has been disconnected');
-        let connectedUser: ServerUser = {
-            id: '',
-            name: '',
-            userId: 0
-        };
-        connectedUsers.find((user, i) => {
-            connectedUser = user;
-            if (user.id == socket.id)
-                connectedUsers.splice(i, 1);
-            return connectedUser.id == socket.id;
-        });
-        if (connectedUser.userId !== 0 && connectedUser.name !== '') {
-            await updateLastSeenCompletely(io, {
-                name: connectedUser.name,
-                online: false,
-                id: connectedUser.userId
-            });
-            // io.emit('last seen update', {
-            //     name: connectedUser.name,
-            //     online: false
-            // });
-            // await updateLastSeen(connectedUser.userId, false);
-        }
+        await disconnectUser(socket);
     });
 });
 
