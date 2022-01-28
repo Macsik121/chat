@@ -3,10 +3,10 @@ import jwtDecode from 'jwt-decode';
 import { withRouter } from 'react-router';
 import {
     Menu,
-    ArrowBack,
-    Send
+    ArrowBack
 } from '@material-ui/icons';
 import { User, VoidFunction } from '../interfaces';
+import updateLastSeen from '../fetchData/updateLastSeen';
 
 const SidebarChats: FC<any> = (props) => {
     const [opened, setOpened] = useState(false);
@@ -23,9 +23,10 @@ const SidebarChats: FC<any> = (props) => {
     if (localStorage.getItem('token')) {
         user = jwtDecode(localStorage.getItem('token') || '');
     }
-    const logout: VoidFunction = () => {
+    const logout: VoidFunction = async () => {
         localStorage.removeItem('token');
         props.history.push('/auth');
+        await updateLastSeen(user.id, user.online);
     }
 
     return (

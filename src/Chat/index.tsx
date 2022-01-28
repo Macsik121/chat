@@ -220,11 +220,15 @@ const Chat: FC<any> = (props) => {
                 const competitors = [
                     {
                         id: choosenUser.id,
-                        name: choosenUser.name
+                        name: choosenUser.name,
+                        lastSeen: choosenUser.lastSeen,
+                        online: choosenUser.online
                     },
                     {
                         id: user.id,
-                        name: user.name
+                        name: user.name,
+                        online: user.online,
+                        lastSeen: user.lastSeen
                     }
                 ];
                 const { chatId } = await fetchData(`
