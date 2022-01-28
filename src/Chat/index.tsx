@@ -120,6 +120,17 @@ const Chat: FC<any> = (props) => {
         }
     }
     function configureSocket() {
+        socket.emit('user connection', {
+            name: user.name,
+            id: user.id
+        });
+        socket.on('disconnect', () => {
+            console.log('a user has been disconnected from client')
+            socket.emit('last seen update', {
+                name: user.name,
+                update: socket.id ? true : false
+            });
+        });
         socket.on('connection', ({ socketId }: { socketId: string; }) => {
             socket.emit('last seen update', {
                 name: user.name,
@@ -162,10 +173,8 @@ const Chat: FC<any> = (props) => {
                 setUserChats(userChats => [ ...userChats, chat ]);
             }
         });
-        socket.on('last seen update', async ({ name, update }: { name: string; update: boolean; }) => {
-            console.log('last seen update is triggered');
-            let id: number = user.id;
-            let online = update;
+        socket.on('last seen update', async ({ name, online }: { name: string; online: boolean; }) => {
+            let { id } = user;
             setUserChats(userChats => {
                 console.log('userChats:', userChats);
                 userChats.find(userChat => {
@@ -201,7 +210,6 @@ const Chat: FC<any> = (props) => {
                 return [ ...userChats ];
             });
             console.log('id, online:', id + ', ' + online);
-            await updateLastSeen(id, online);
         });
     }
     async function sendMessage(e: React.FormEvent) {

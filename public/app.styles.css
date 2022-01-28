@@ -306,10 +306,15 @@ body {
     margin-left: var(--padding);
 }
 
-.chat .main .chat-info .title {
+.chat .main .chat-info .chat-info-wrap {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     margin-left: var(--padding);
+}
+
+.chat .main .chat-info .chat-info-wrap .last-seen {
+    color: rgb(150, 150, 150);
+    font-size: .8em;
 }
 
 .auth-forms {
