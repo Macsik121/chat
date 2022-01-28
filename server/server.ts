@@ -42,6 +42,10 @@ io.on('connection', (socket) => {
         if (cond) {
             connectedUsers.push(user);
             await updateLastSeen(user.userId, true);
+            io.emit('last seen update', {
+                name: user.name,
+                online: true
+            });
         }
         console.log('connected users:', connectedUsers);
     });
