@@ -124,19 +124,6 @@ const Chat: FC<any> = (props) => {
             name: user.name,
             id: user.id
         });
-        socket.on('disconnect', () => {
-            console.log('a user has been disconnected from client')
-            socket.emit('last seen update', {
-                name: user.name,
-                update: socket.id ? true : false
-            });
-        });
-        socket.on('connection', ({ socketId }: { socketId: string; }) => {
-            socket.emit('last seen update', {
-                name: user.name,
-                update: socketId ? true : false
-            });
-        });
         socket.on('text message',
             ({
                 chat,

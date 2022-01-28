@@ -58,12 +58,6 @@ io.on('connection', (socket) => {
     socket.on('room creation', (chat: Chat) => {
         io.emit('room creation', chat);
     });
-    socket.on('last seen update', ({ name, update }: { name: string; update: boolean; }) => {
-        io.emit('last seen update', {
-            name,
-            update
-        });
-    });
     socket.on('disconnect', async () => {
         console.log('a user has been disconnected');
         let connectedUser: ServerUser = {
