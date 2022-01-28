@@ -6,7 +6,6 @@ import {
     ArrowBack
 } from '@material-ui/icons';
 import { User, VoidFunction } from '../interfaces';
-import updateLastSeen from '../fetchData/updateLastSeen';
 
 const SidebarChats: FC<any> = (props) => {
     const [opened, setOpened] = useState(false);
@@ -26,7 +25,7 @@ const SidebarChats: FC<any> = (props) => {
     const logout: VoidFunction = async () => {
         localStorage.removeItem('token');
         props.history.push('/auth');
-        await updateLastSeen(user.id, user.online);
+        props.socket.emit('last seen update');
     }
 
     return (

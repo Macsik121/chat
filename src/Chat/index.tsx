@@ -15,7 +15,6 @@ import ChatInfo from './ChatInfo';
 import UserChat from './Chat';
 import { User, Chat, Message, ChoosenUser } from '../interfaces';
 import globals from '../globals';
-import updateLastSeen from '../fetchData/updateLastSeen';
 
 const uiEndpoint = globals.__UI_SERVER_ENDPOINT__;
 
@@ -455,7 +454,9 @@ const Chat: FC<any> = (props) => {
                     {chats}
                 </div>
             </header>
-            <SidebarChats />
+            <SidebarChats
+                socket={socket}
+            />
             <main id="main" className="main">
                 <ChatInfo
                     user={choosenUser}

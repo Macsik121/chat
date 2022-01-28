@@ -6,7 +6,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 // import fs from 'fs';
 // import path from 'path';
-import { Chat } from '../src/interfaces';
+import { Chat, User } from '../src/interfaces';
 import updateLastSeen from '../src/fetchData/updateLastSeen';
 const app = express();
 const httpServer = http.createServer(app);
@@ -23,13 +23,43 @@ interface ServerUser {
     userId: number;
     name: string;
 }
+
+interface LastSeenUpdate {
+    name: string,
+    online: boolean,
+    id: number
+}
+
 const connectedUsers: Array<ServerUser> = [];
+
+async function updateLastSeenCompletely(io: any, {
+    name,
+    online,
+    id
+}: LastSeenUpdate) {
+    io.emit('last seen update', {
+        name,
+        online
+    });
+    await updateLastSeen(id, online);
+}
 
 app.use('/', express.static('public'));
 
 io.on('connection', (socket) => {
     io.emit('connection', {
         socketId: socket.id
+    });
+    socket.on('last seen update', async ({
+        name,
+        online,
+        id
+    }: LastSeenUpdate) => {
+        await updateLastSeenCompletely(io, {
+            name,
+            online,
+            id
+        });
     });
     socket.on('user connection', async ({ name, id }: { name: string, id: number }) => {
         console.log('a user has been connected');
@@ -41,11 +71,16 @@ io.on('connection', (socket) => {
         };
         if (cond) {
             connectedUsers.push(user);
-            await updateLastSeen(user.userId, true);
-            io.emit('last seen update', {
+            await updateLastSeenCompletely(io, {
                 name: user.name,
-                online: true
+                online: true,
+                id: user.userId
             });
+            // io.emit('last seen update', {
+            //     name: user.name,
+            //     online: true
+            // });
+            // await updateLastSeen(user.userId, true);
         }
         console.log('connected users:', connectedUsers);
     });
@@ -72,11 +107,16 @@ io.on('connection', (socket) => {
             return connectedUser.id == socket.id;
         });
         if (connectedUser.userId !== 0 && connectedUser.name !== '') {
-            await updateLastSeen(connectedUser.userId, false);
-            io.emit('last seen update', {
+            await updateLastSeenCompletely(io, {
                 name: connectedUser.name,
-                online: false
+                online: false,
+                id: connectedUser.userId
             });
+            // io.emit('last seen update', {
+            //     name: connectedUser.name,
+            //     online: false
+            // });
+            // await updateLastSeen(connectedUser.userId, false);
         }
     });
 });
