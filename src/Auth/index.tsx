@@ -4,12 +4,12 @@ import Signin from "./Signin";
 import Signup from "./Signup";
 
 const Auth: FC<any> = (props: any) => {
-    console.log('Auth rendering');
     if (localStorage.getItem('token')) {
         props.history.push('/');
         return <div></div>;
     }
     const [isMounted, setIsMounted] = useState(false);
+    const { socket } = props;
 
     useEffect(() => {
         console.log('setisMounted(true)')
@@ -24,8 +24,8 @@ const Auth: FC<any> = (props: any) => {
                 pointerEvents: isMounted ? 'all' : 'none'
             }}
         >
-            <Signin />
-            <Signup />
+            <Signin socket={socket} />
+            <Signup socket={socket} />
         </div>
     )
 }

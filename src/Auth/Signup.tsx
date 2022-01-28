@@ -10,6 +10,7 @@ interface ValueString {
 const Signup: FC<any> = (props) => {
     const signUp: (e: React.SyntheticEvent) => void = async (e) => {
         e.preventDefault();
+        const { socket } = props;
         const target = e.target as typeof e.target & {
             name: ValueString;
             email: ValueString;
@@ -23,6 +24,7 @@ const Signup: FC<any> = (props) => {
             password,
             repeatedPassword
         } = target;
+
         const query = `
             mutation signUp(
                 $user: UserInput!
@@ -32,6 +34,9 @@ const Signup: FC<any> = (props) => {
                 ) {
                     message
                     success
+                    payload {
+
+                    }
                 }
             }
         `;
@@ -45,14 +50,20 @@ const Signup: FC<any> = (props) => {
         const {
             signUp: {
                 message,
-                success
+                success,
+                payload
             }
         } = await fetchData(query, vars);
+
         if (success) {
             localStorage.setItem('token', message);
             props.history.push('/');
+            socket.emit('user connection', {
+                name: vars.user.name,
+                id: payload.id
+            });
         } else {
-            console.log('sign up is failed. Server message:', message);
+            alert(`Sign up is failed. Server message: ${message}`);
         }
     }
 

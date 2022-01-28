@@ -6,6 +6,7 @@ import InputField from './InputField';
 const Signin: FC<any> = (props) => {
     const signIn: (e: React.SyntheticEvent) => void = async (e) => {
         e.preventDefault();
+        const { socket } = props;
         const target = e.target as typeof e.target & {
             name: { value: string },
             password: { value: string }
@@ -17,6 +18,9 @@ const Signin: FC<any> = (props) => {
                 signIn(user: $user) {
                     message
                     success
+                    payload {
+                        id
+                    }
                 }
             }
         `;
@@ -29,15 +33,20 @@ const Signin: FC<any> = (props) => {
         const {
             signIn: {
                 message,
-                success
+                success,
+                payload
             }
         } = await fetchData(query, vars);
 
         if (success) {
             localStorage.setItem('token', message);
             props.history.push('/');
+            socket.emit('user connection', {
+                name: vars.user.name,
+                id: payload.id
+            });
         } else {
-            console.log('Sign in is failed. Server message:', message)
+            alert(`Sign in is failed. Server message: ${message}`);
         }
     }
 

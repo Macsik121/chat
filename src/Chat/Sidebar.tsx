@@ -25,7 +25,11 @@ const SidebarChats: FC<any> = (props) => {
     const logout: VoidFunction = async () => {
         localStorage.removeItem('token');
         props.history.push('/auth');
-        props.socket.emit('last seen update');
+        props.socket.emit('last seen update', {
+            name: user.name,
+            online: false,
+            id: user.id
+        });
     }
 
     return (

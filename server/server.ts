@@ -50,17 +50,6 @@ io.on('connection', (socket) => {
     io.emit('connection', {
         socketId: socket.id
     });
-    socket.on('last seen update', async ({
-        name,
-        online,
-        id
-    }: LastSeenUpdate) => {
-        await updateLastSeenCompletely(io, {
-            name,
-            online,
-            id
-        });
-    });
     socket.on('user connection', async ({ name, id }: { name: string, id: number }) => {
         console.log('a user has been connected');
         const cond = !connectedUsers.some(user => user.name == name);
@@ -92,6 +81,19 @@ io.on('connection', (socket) => {
     });
     socket.on('room creation', (chat: Chat) => {
         io.emit('room creation', chat);
+    });
+    socket.on('last seen update', async ({
+        name,
+        online,
+        id
+    }: LastSeenUpdate) => {
+        if (!online)
+            socket.emit('disconnect');
+        else
+            socket.emit('user connection', {
+                name,
+                id
+            });
     });
     socket.on('disconnect', async () => {
         console.log('a user has been disconnected');

@@ -14,11 +14,6 @@ import Search from './Search';
 import ChatInfo from './ChatInfo';
 import UserChat from './Chat';
 import { User, Chat, Message, ChoosenUser } from '../interfaces';
-import globals from '../globals';
-
-const uiEndpoint = globals.__UI_SERVER_ENDPOINT__;
-
-const socket = socketClient(uiEndpoint);
 
 type Reducer = (state: any, action: any) => any;
 
@@ -43,6 +38,7 @@ const initState = {
 };
 
 const Chat: FC<any> = (props) => {
+    const { socket } = props;
     const [state, dispatch] = useReducer(reducer, initState);
     const [userChats, setUserChats] = useState<Array<Chat>>([]);
     const [choosenUser, setChoosenUser] = useState<ChoosenUser>({
