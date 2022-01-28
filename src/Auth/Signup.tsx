@@ -34,9 +34,7 @@ const Signup: FC<any> = (props) => {
                 ) {
                     message
                     success
-                    payload {
-                        id
-                    }
+                    payload
                 }
             }
         `;
@@ -47,13 +45,14 @@ const Signup: FC<any> = (props) => {
                 password: password.value
             }
         };
-        const {
+        let {
             signUp: {
                 message,
                 success,
                 payload
             }
         } = await fetchData(query, vars);
+        payload = JSON.parse(payload);
 
         if (success) {
             localStorage.setItem('token', message);
