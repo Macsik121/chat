@@ -216,8 +216,8 @@ const Chat: FC<any> = (props) => {
                     {
                         id: choosenUser.id,
                         name: choosenUser.name,
-                        lastSeen: choosenUser.lastSeen,
-                        online: choosenUser.online
+                        online: choosenUser.online,
+                        lastSeen: choosenUser.lastSeen
                     },
                     {
                         id: user.id,
@@ -375,7 +375,7 @@ const Chat: FC<any> = (props) => {
                     <div
                         className="chat"
                         key={key}
-                        onClick={() => {
+                        onMouseDown={() => {
                             const choosenUser: ChoosenUser = {
                                 id: 0,
                                 name: (
@@ -414,7 +414,13 @@ const Chat: FC<any> = (props) => {
                             const chatExists = userChats.find((chat: Chat) => chat.id == searchedUser.chatId);
                             const selectedChat = chatExists ? searchedUser.chatId : false;
                             dispatch({ type: 'selectedChat', payload: selectedChat });
-                            setChoosenUser(() => searchedUser);
+                            const newChoosenUser: ChoosenUser = {
+                                id: searchedUser.id,
+                                name: searchedUser.name,
+                                lastSeen: searchedUser.lastSeen,
+                                online: searchedUser.online
+                            };
+                            setChoosenUser(() => newChoosenUser);
                             const main = document.getElementById('main') as HTMLDivElement;
                             const chatBody = document.getElementById('chat-body-container') as HTMLDivElement;
                             if (main) main.classList.add('active');
